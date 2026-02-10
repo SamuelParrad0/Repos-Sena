@@ -37,7 +37,7 @@ const storage = multer.diskStorage({
    * 
    * @param {Object} req - Objeto de peticion HTTP
    * @param {Object} file - Archivo que esta subiendo
-   * @param {Funtion} cb . Callback que se llama con (error, destination)
+   * @param {Function} cb . Callback que se llama con (error, destination)
    */  
    destination: function (req, file, cb) {
     //cb(null, ruta) -> sin error, ruta = carpeta destino
@@ -50,7 +50,7 @@ const storage = multer.diskStorage({
  * 
  * @param {Object} req - Objeto de peticion HTTP
  * @param {Object} file - Archivo que se esta subiendo 
- * @param {Funtion} cb - Callback que se llama con (error, filename)
+ * @param {Function} cb - Callback que se llama con (error, filename)
  */
 filename: function (req, file, cb) {
     //Generar nombre unico usando timestamp + nombre original
@@ -68,5 +68,5 @@ filename: function (req, file, cb) {
  * 
  * @param {Object} req - Objeto de peticion HTTP
  * @param {Object} file - Archivo que se esta subiendo
- * @param {Funtion} cb - Callback que se llama con (error, acceptFile)
+ * @param {Function} cb - Callback que se llama con (error, acceptFile)
  */
