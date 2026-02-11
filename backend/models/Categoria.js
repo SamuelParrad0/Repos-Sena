@@ -113,7 +113,7 @@
                     throw error;
                 }
             }
-            // S se activa una categoria no se activan automaticamente las subcategorias y productos 
+            // Si se activa una categoria no se activan automaticamente las subcategorias y productos 
         }
     }
  })
