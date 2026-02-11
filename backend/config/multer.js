@@ -70,3 +70,31 @@ filename: function (req, file, cb) {
  * @param {Object} file - Archivo que se esta subiendo
  * @param {Function} cb - Callback que se llama con (error, acceptFile)
  */
+const filefilter = (req, file, cb) => {
+    //Tipos Mime permitidos para imagenes
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+
+    //Verificar si el tipo de archivo esta en la lista permitida
+
+    if (allowedMimeTypes.includes(file.mime)) {
+        //cb(null, true) -> aceptar el archivo
+        cb(null, true);
+    } else {
+        //cb(error) -> rechazer archivo
+        cb(new Error('solo se permite imagenes (JPG, JPEG, PNG, GIF)'), false);
+    }
+};
+
+/**
+ * Configurar multer con las opciones definidas
+ */
+
+const upload = multer ({
+    storage : storage,
+    filefilter: filefilter,
+    limits: {
+        //Limite de tamaño de archivoen bytes
+        //por defecto 5MB (5 * 1024) 5242880 bytes
+        fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5242880
+    }
+});
