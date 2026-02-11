@@ -106,8 +106,14 @@
                             activo: false}, {transaction: options.transaction});
                             console.log(` Subcategoria desactivada: ${Producto.nombre}`);
                     }
+
+                    console.log(`Categoria y elementos relacionados desactivados correctamente`);
+                } catch (error) {
+                    console.error('Error al desactivar elementos relacionados:', error.message);
+                    throw error;
                 }
             }
+            // S se activa una categoria no se activan automaticamente las subcategorias y productos 
         }
     }
  })
