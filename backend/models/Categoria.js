@@ -116,4 +116,30 @@
             // Si se activa una categoria no se activan automaticamente las subcategorias y productos 
         }
     }
- })
+ });
+
+ //METODOS DE INSTANCIA 
+ /**
+  * Metodo para contar subcategorias de esta categoria
+  * 
+  * @returns {Promise<number>} - numero de subcategorias
+  */
+ Categoria.prototype.contarSubcategorias = async function () {
+    const Subcategoria = require('./Subcategoria');
+    return await Subcategoria.count({ 
+        where: {categoriaId: this.id}});
+ };
+
+ /**
+  * Metodo para contar productos de esta categoria
+  * 
+  * @returns {Promise<number>} - numero de subcategorias
+  */
+ Categoria.prototype.contarProducto = async function () {
+    const Producto = require('./Producto');
+    return await Producto.count({ 
+        where: {categoriaId: this.id}});
+ };
+
+ //Exportar modelo Categoria
+ module.exports = Categoria;
