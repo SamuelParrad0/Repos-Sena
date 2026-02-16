@@ -14,7 +14,7 @@
  /**
   * Definir el modelo de carrito
   */
- const carrito = sequelize.define('carrito', {
+ const Carrito = sequelize.define('Carrito', {
     //Campos de la tabla
     //Id Identificador unico (PRIMARY KEY)
     id: {
