@@ -111,61 +111,54 @@
         fields: ['usuarioId', 'productoId'],
         name: 'usuario_producto_unique'
         }
-    ],
+    ], 
 /**
      * Hooks acciones automaticas
      */
 
     hooks: {
         /**
-         * beforeCreate - se ejecuta antes de crear una subcategoria
-         * verifica que la caregoria padre este activa
+         * beforeCreate - se ejecuta antes de crear un item en el carrito
+         * valida que este esta activo y tenga stock suficiente
          */
-        beforeCreate: async (subcategoria) => {
-            const Categoria = require('./Categoria');
+        beforeCreate: async (itemCarrito) => {
+            const Producto = require('./Producto');
 
-            //Buscar categoria padre
-            const categoria = await Categoria.findByPk(subcategoria.categoriaId);
+            //Buscar el producto
+            const producto = await Producto.findByPk(itemCarrito.productoId);
 
-            if (!categoria) {
-                throw new Error ('La categoria seleccionada no existe');
+            if (!producto) {
+                throw new Error ('El producto no existe');
             }
 
-            if (!categoria.activo) {
-                throw new Error('No se puede crear una subcategoria en una categoria inactiva');
+            if (!producto.activo) {
+                throw new Error('No se puede agregar un producto inactivo al carrito');
             }
+
+            if(!producto.hayStock(itemCarrito.cantidad)) {
+                throw new Error(`Stock insuficiente. Solo hay ${producto.stock} unidades disponibles`);
+            } 
+
+            //Guardar el precio actual del producto
+            itemCarrito.precioUnitario = producto.precio
         },
         /**
-         * afterUpdate: se ejecuta despues de actualizar una subcategoria
-         * si se desactiva una subcategoria se desactivan todos sus productos
+         * beforeUpdate: se ejecuta antes de actualizar un carrito
+         * valida que haya stock suficiente si se aumenta la cantidad 
          */
-        afterUpdate: async (subcategoria, options) => {
-            //Verificar si el campo activo cambio
-            if (subcategoria.changed('activo') && !subcategoria.activo) {
-                console.log(`Desactivando subcategoria: ${subcategoria.nombre}`);
-                
-                // Importar modelos (aqui para evitar dependencias circulares)
+        beforeUpdate: async (itemCarrito) => {
+            
+            if (itemCarrito.changed('cantidad')) {
                 const Producto = require('./Producto');
+                const producto = await Producto.findByPk (itemCarrito.productoId);
+                if (!producto) {
+                    throw new Error('El producto no existe')
+                }
 
-                try {
-                    //Paso 1: desactivar los productos de esta subcategoria
-                    const productos = await Producto.findAll({
-                        where: {SubcategoriaId: Subcategoria.id
-                        }
-                    });
-
-                    for (const producto of productos) {
-                        await producto.update({
-                            activo: false}, {transaction: options.transaction});
-                            console.log(` Producto desactivado: ${producto.nombre}`);
-                    }
-                    console.log(`Subcategoria y productos relacionados desactivados correctamente `);
-                    } catch (error) {
-                    console.error('Error al desactivar productos relacionados', error.message);
-                    throw error;
+                if (!producto.hayStock(itemCarrito.cantidad)) {
+                    throw new Error(`Stock insuficiente. solo hay ${producto.stock} unidades disponibles`);
                 }
             }
-            // Si se activa una categoria no se activan automaticamente las subcategorias y productos 
         }
     }
  });
@@ -174,36 +167,80 @@
  /**
   * Metodo para contar subcategorias de esta categoria
   * 
-  * @returns {Promise<number>} - numero de productos
+  * @returns {number} - Subtotal (precio * cantidad)
   */
- Subcategoria.prototype.contarproductos = async function () {
-    const Producto = require('./Producto');
-    return await Producto.count({ 
-        where: {subcategoriaId: this.id}});
+ Carrito.prototype.calcularSubtotal = function () {
+    return parseFloat(this.precioUnitario) * this.cantidad;
  };
-}
 
-    nombre: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-        unique: {
-            msg: 'Ya existe una categoria con ese nombre'
-        },
-        validate: {
-            notEmpty: {
-                msg: 'El nombre de la categoria no puede estar vacio'
-            },
-            len: {
-                args: [2, 100],
-                msg: 'El nombre debe tener entre 2 y 100 caracteres'
+ /**
+  * Metodo para actualizar la cantidad
+  * @param {number} nuevaCantidad - nueva cantidad
+  * @returns {Promise} Item actualizado *
+  */
+ Carrito.prototype.actualizarCantidad = async function (nuevaCantidad) {
+    const Producto = require('./Producto');
+
+    const producto = await Producto.findByPk(this.productoId);
+
+    if (!producto.hayStock(nuevaCantidad)) {
+        throw new Error(`Stock insuficiente. solo hay ${producto.stock} unidades disponibles`);
+    }
+
+    this.cantidad = nuevaCantidad;
+    return await this.save();
+ };
+ 
+ /**
+  * Metodo para obtener el carrito completo de un usuario
+  * incluye informacion de los productos 
+  * @param {number} usuarioId - id del usuario
+  * @return {Promise<Array>} - Items del carrito con productos 
+  */
+ Carrito.obtenerCarritoUsuario = async function (usuarioId) {
+    const Producto = require('./Producto');
+
+    return await this.findAll({
+        where: { usuarioId},
+        include: [
+            {
+                model: Producto,
+                as: 'producto'
             }
-        }
-    },
+        ],
+        order: [['createdAt', 'DESC']]
+    });
+ };
 
-    /**
-     * Descripcion de la categoria
-     */
-    descripcion: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-    
+ /**
+  * Metodo para calcular el total del carrito de un usuario
+  * @param {number} usuarioId id del usuario
+  * @returns {Promise<number>} total del carrito
+  */
+ Carrito.calcularTotalCarrito = async function (usuarioId) {
+    const items= await this.findAll({
+        where: {usuarioId}
+    });
+
+    let total = 0;
+    for (const item of items) {
+        total += item.calcularSubtotal();
+    }
+    return total;
+ };
+
+ /**
+  * Metodo para vaciar el carrito de un usuario
+  * util despues de realizar un pedido * 
+  * 
+  * @param {number} usuarioId - id del usuario
+  * @returns {Promise<number>} numero de items eliminados
+  */
+ Carrito.vaciarCarrito = async function (usuarioId) {
+    return await this.destroy({
+        where: { usuarioId }
+    });
+ };
+
+ //Exportar modelo
+ module.exports = Carrito;
