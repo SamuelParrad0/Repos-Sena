@@ -102,63 +102,26 @@
         allowNull: true
     },
 
-
-     // ProductoId Id del producto del carrito
-    productoId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'Productos',
-            key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE', //se elimina el producto del carrito
-        validate: {
-            notNull: {
-                msg:'Debe especificar un producto'
-            }
-        }
+    //Fecha de pago
+    fechaPago: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    //Fecha de envio
+    fechaEnvio: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    //Fecha de Entrega
+    fechaEntrega: {
+        type: DataTypes.DATE,
+        allowNull: true
     },
 
-    // Cantidad de este producto en el carrito
-    cantidad: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 1,
-        validate: {
-            isInt: {
-                msg: 'La cantidad debe ser un numero'
-            },
-            min: {
-                args: [1],
-                msg: 'La cantidad debe ser al menos 1'
-            }
-        }
-    },
-
-    /**
-     * Precio Unitario del producto al momento de agragarlo al carrito
-     * Se guarda para mantener el precio aunque el producto
-     */
-
-    precioUnitario: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false,
-        validate: {
-            isDecimal: {
-                msg: 'El precio debe ser un numero decimal valido'
-            },
-            min: {
-                args: [0],
-                msg: 'El precio no puede ser negativo'
-            }
-        }
-
-    }
 }, {
     //Opciones del modelo
 
-    tableName: 'carritos',
+    tableName: 'pedidos',
     timestamps: true,
     //Indices para mejorar las busquedas
     indexes: [
@@ -167,13 +130,15 @@
             fields: ['usuariosId']
         },
         {
-
-        //Indice compuesto: un usuario no puede tener el mismo producto duplicado 
-        unique: true,
-        fields: ['usuarioId', 'productoId'],
-        name: 'usuario_producto_unique'
-        }
+            //  Indice para buscar pedidos por estado
+            fields: ['estado']
+        },
+        {
+            //  Indice para buscar pedidos por fecha
+            fields: ['createdAt']
+        },        
     ], 
+
 /**
      * Hooks acciones automaticas
      */
@@ -183,7 +148,7 @@
          * beforeCreate - se ejecuta antes de crear un item en el carrito
          * valida que este esta activo y tenga stock suficiente
          */
-        beforeCreate: async (itemCarrito) => {
+        /**beforeCreate: async (itemCarrito) => {
             const Producto = require('./Producto');
 
             //Buscar el producto
@@ -203,106 +168,152 @@
 
             //Guardar el precio actual del producto
             itemCarrito.precioUnitario = producto.precio
-        },
+        },*/
+
+
         /**
-         * beforeUpdate: se ejecuta antes de actualizar un carrito
-         * valida que haya stock suficiente si se aumenta la cantidad 
+         * afterUpdate: se ejecuta despues de actualizar un pedido
+         * actualiza las fechas segun el estado
          */
-        beforeUpdate: async (itemCarrito) => {
-            
-            if (itemCarrito.changed('cantidad')) {
-                const Producto = require('./Producto');
-                const producto = await Producto.findByPk (itemCarrito.productoId);
-                if (!producto) {
-                    throw new Error('El producto no existe')
+        afterUpdate: async (pedido) => {
+            // si es estado cambio a pagado guarda la fecha del pago
+            if (pedido.changed('estado') && pedido.estado === 'pagado') {
+                pedido.fechaPago = new Date();
+                await pedido.save ({ hooks: false}); //Guardar sin ejecutar hooks
+            }
+            // si el estado cambio a enviado guarda le fecha de envio
+                if (pedido.changed('estado') && pedido.estado === 'enviado' && !pedido.fechaEnvio) {
+                    pedido.fechaEnvio = new Date();
+                    await pedido.save({ hooks: false}); //Guardar sin ejecutar hooks
+                }
+                
+                // si el estado cambio a enviado guarda le fecha de entregado 
+                if (pedido.changed('estado') && pedido.estado === 'entregado' && !pedido.fechaEntrega) {
+                    pedido.fechaEntrega = new Date();
+                    await pedido.save({ hooks: false}); //Guardar sin ejecutar hooks
                 }
 
-                if (!producto.hayStock(itemCarrito.cantidad)) {
-                    throw new Error(`Stock insuficiente. solo hay ${producto.stock} unidades disponibles`);
+                },
+                /**
+                 * beforeDestroy: se ejecuta antes de eliminar un pedido
+                 */
+                beforeDestroy: async () => {
+                    throw new Error('No se puede eliminar pedidos, use el estado cancelado en su lugar')
                 }
             }
-        }
-    }
- });
+        });
 
  //METODOS DE INSTANCIA 
  /**
-  * Metodo para contar subcategorias de esta categoria
+  * Metodo para cambiar el estado del pedido
   * 
+  * @param {string} nuevoEstado - nuevo estado del pedido
   * @returns {number} - Subtotal (precio * cantidad)
   */
- Carrito.prototype.calcularSubtotal = function () {
-    return parseFloat(this.precioUnitario) * this.cantidad;
+
+ Pedido.prototype.cambiarEstado = async function (nuevoEstado) {
+    const estadosValidos = ['pendiente', 'pagado', 'enviado', 'cancelado'];
+
+    if (!estadosValidos.includes(nuevoEstado)) {
+        throw new Error('estado invalido')
+    }
+
+    this.estado = nuevoEstado;
+    return await this.save();
  };
 
  /**
-  * Metodo para actualizar la cantidad
-  * @param {number} nuevaCantidad - nueva cantidad
-  * @returns {Promise} Item actualizado *
+  * Metodo para verificar si el pedido puede ser cancelado
+  * solo se puede cancelar si esta en estado pendiente o pagado
+  * @returns {boolean} - true si puede cancelarse, false si no
   */
- Carrito.prototype.actualizarCantidad = async function (nuevaCantidad) {
-    const Producto = require('./Producto');
 
-    const producto = await Producto.findByPk(this.productoId);
+ Pedido.prototype.puedeSerCancelado = function() {
+    return ['pendiente', 'pagado'].includes(this.estado);
+ };
 
-    if (!producto.hayStock(nuevaCantidad)) {
-        throw new Error(`Stock insuficiente. solo hay ${producto.stock} unidades disponibles`);
+ /**
+  * Metodo para cancelar pedido
+  * @returns {Promise<Pedido>} pedido cancelado
+  */
+ Pedido.prototype.cancelar = async function() {
+     if (!this.puedeSerCancelado()) {
+        throw new Error('este pedido no puede ser cancelado');
     }
 
-    this.cantidad = nuevaCantidad;
+    //  Importar modelos
+    const DetallePedido = require('./DetallePedido');
+    const Producto = require('./Producto');
+
+    //Obtener detalles del pedido
+    const detalles = await DetallePedido.findAll({
+        where: { pedidoId: this.id}
+    });
+
+    //devolver el stock de cada producto
+    for (const detalle of detalles) {
+        const producto = await Producto.findByPk(detalle.productoId);
+        if (producto) {
+        await producto.aumentarStock(detalle.cantidad);
+        console.log(`Stock devuelto: ${detalle.cantidad} X ${producto.nombre}`);
+    }
+    }
+    
+    //Cambiar estado a cancelado
+    this.estado = 'cancelado';
     return await this.save();
  };
  
  /**
-  * Metodo para obtener el carrito completo de un usuario
-  * incluye informacion de los productos 
-  * @param {number} usuarioId - id del usuario
-  * @return {Promise<Array>} - Items del carrito con productos 
+  * Metodo para obtener detalle del pedido con productos
+  * @return {Promise<Array>} - detalle del pedido
   */
- Carrito.obtenerCarritoUsuario = async function (usuarioId) {
+ Pedido.prototype.obtenerDetalle = async function () {
+    const DetallePedido = require('./DetallePedido');
     const Producto = require('./Producto');
 
-    return await this.findAll({
-        where: { usuarioId},
+    return await DetallePedido.findAll({
+        where: { pedidoId: this.id },
         include: [
             {
                 model: Producto,
                 as: 'producto'
             }
+        ]
+    });
+ };
+
+ /**
+  * Metodo para obtener pedidos por estado
+  * @param {string} estado estado a filtrear
+  * @returns {Promise<Array>} pedidos filtrados
+  */
+ Pedido.obtenerPorEstado = async function (estado) {
+    const Usuario = require('./Usuario');
+    return await this.findAll({
+        where: { estado },
+        include: [
+            {
+                model: Usuario,
+                as:'Usuario',
+                attributes: ['id', 'nombre', 'email', 'telefono']
+            }
         ],
+        oder: [['createdAt', 'DESC']]
+    });
+ };
+
+ /**
+  * Metodo para obtener historial de pedidos de un usuario
+  * @param {number} usuarioId - id del usuario
+  * @returns {Promise<Array>} pedidos del usuario
+  */
+ Pedido.obtenerHistorial = async function (usuarioId) {
+    return await this.findAll({
+        where: { usuarioId },
         order: [['createdAt', 'DESC']]
     });
  };
 
- /**
-  * Metodo para calcular el total del carrito de un usuario
-  * @param {number} usuarioId id del usuario
-  * @returns {Promise<number>} total del carrito
-  */
- Carrito.calcularTotalCarrito = async function (usuarioId) {
-    const items= await this.findAll({
-        where: {usuarioId}
-    });
-
-    let total = 0;
-    for (const item of items) {
-        total += item.calcularSubtotal();
-    }
-    return total;
- };
-
- /**
-  * Metodo para vaciar el carrito de un usuario
-  * util despues de realizar un pedido * 
-  * 
-  * @param {number} usuarioId - id del usuario
-  * @returns {Promise<number>} numero de items eliminados
-  */
- Carrito.vaciarCarrito = async function (usuarioId) {
-    return await this.destroy({
-        where: { usuarioId }
-    });
- };
-
  //Exportar modelo
- module.exports = Carrito;
+ module.exports = Pedido;
