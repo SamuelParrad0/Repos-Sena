@@ -452,29 +452,12 @@ const toggleproducto = async (req, res) => {
         producto.activo = !producto.activo;
         await Producto.save();
 
-        //Alternar estado activo
-        const nuevoEstado = !producto.activo;
-        producto.activo = nuevoEstado;
-
-        //guardar cambios
-        await producto.save();
-
-        //contar cuantos registros se afectaron
-        const subcategoriasAfectadas = await subcategoria.count({ where :{ categoriaID: id } });
-        const productosAfectados = await producto.count({ where :{ categoriaID: id } 
-        });
-
         // Respuesta exitosa
         res.json({
             success: true,
             message: `Producto ${nuevoEstado ? 'activado' : 'desactivado'} exitosamente`,
             data: {
-                producto: Producto,
-                afectados : {
-                subcategorias:
-                subcategoriasAfectadas,
-                productos: productosAfectados
-                }
+                producto
             }
         });
     } catch (error) {
@@ -507,7 +490,7 @@ const toggleproducto = async (req, res) => {
             }
             //validar verificacion que no tenga productos relacionados
             const subcategorias = await subcategoria.count({
-                 where: { categoriaID: id } 
+                where: { categoriaID: id }
                 });
                 if (subcategorias > 0) {
                     return res.status(400).json({
