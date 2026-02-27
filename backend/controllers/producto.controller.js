@@ -567,136 +567,32 @@ const toggleproducto = async (req, res) => {
                         message: 'Operacion invalida usa aumentar, reducir o establecer'
                     });
             }
-        }
-    }
 
-            //validar verificacion que no tenga productos relacionados
-            const subcategorias = await subcategoria.count({
-                where: { categoriaID: id }
-                });
-                if (subcategorias > 0) {
-                    return res.status(400).json({
-                        success: false,
-                        message: `No se puede eliminar el producto porque tiene ${subcategorias} subcategorias asociadas usa 
-                        PATCH /api/admin/productos/:id/toogle para desactivarlo en lugar de eliminarlo`
-                    });
-                }
-            //validar verificacion que no tenga productos relacionados
-            const productos = await producto.count({
-                 where: { categoriaID: id } 
-                });
-                if (productos > 0) {
-                    return res.status(400).json({
-                        success: false,
-                        message: `No se puede eliminar el producto porque tiene ${productos} productos asociados usa 
-                        PATCH /api/admin/productos/:id toogle para desactivarlo en lugar de eliminarlo`
-                    });
-                }
-            // Eliminar producto
-            await producto.destroy();
+            producto.stock = nuevoStock;
+            await producto.save();
 
-            // Respuesta exitosa
             res.json({
                 success: true,
-                message: 'Producto eliminado exitosamente'
+                message: `Stock ${operacion === 'aumentar' ? 'aumentado' : operacion === 'reducir' ? 'reducido': 'establecido'} exitosamente`,
+                data: {
+                    productoId: producto.id,
+                    nombre: producto.nombre,
+                    stockAnterior: operacion === 'establecer' ? null : (operacion === 'aumentar' ? producto.stock - cantidadNUm : producto.stock + cantidadNUm),
+                    stockNuevo: producto.stock
+                }
             });
-        }catch (error) {
-            console.error('Error en eliminarProducto:', error);
+
+        } catch (error) {
+            console.error('error en actualizarStock: ', error);
             res.status(500).json({
                 success: false,
-                message: 'Error al eliminar producto',
+                message: 'error al actualizar stock',
                 error: error.message
             });
         }
-    };
-
-    /**
-     * obtener estadisticas de un producto
-     * GET /api/admin/productos/:id/estadisticas retorna
-     * Total de productos activos e inactivos
-     * valor total del inventario (precio * stock)
-     * stock total
-     * @param {object} req - request express
-     * @param {object} res - response express
-     */
-
-const getEstadisticasProducto = async (req, res) => {
-    try {
-        const { id } = req.params;
-        // verificar que el producto exista
-        const producto = await producto.findByPk(id);
-
-        if (!producto) {
-            return res.status(404).json({
-                success: false,
-                message: 'Producto no encontrado'
-            });
-        }
-        // contar subcategorias
-        const totalSubcategorias = await subcategoria.count({
-                where: { categoriaID: id,}
-        });
-        const subcategoriasActivas = await subcategoria.count({
-                where: { categoriaID: id, activo: true }
-        });
-        // contar productos
-        const totalProductos = await producto.count({
-                where: { categoriaID: id,}
-        });
-        const productosActivos = await producto.count({
-                where: { categoriaID: id, activo: true }
-        });
-        // obtener productos  para calcular estadisticas
-        const productos = await producto.findAll({
-                where:{categoriaID:id},
-                attributes:['precio','stock']
-        });
-
-        //Calcular estadisticas de inventario
-        let valorTotalInventario = 0;
-        let stockTotal = 0;
-
-        productos.forEach(producto => {
-            valorTotalInventario += parseFloat(producto.precio) * producto.stock;
-            stockTotal += producto.stock; 
-        });
-        // Respuesta exitosa
-        res.json({
-            success: true,
-            data: {
-                categoria: {
-                    id: categoria.id,
-                    nombre: categoria.nombre,
-                    activo: categoria.activo
-                },
-                estadisticas:{
-                    subcategorias:{
-                        total: totalSubcategorias,
-                        activas: subcategoriasActivas,
-                        inactivas: totalSubcategorias - subcategoriasActivas
-                    },
-                    productos:{
-                        total: totalProductos,
-                        activos: productosActivos,
-                        inactivos: totalProductos - productosActivos
-                    },
-                    inventario:{
-                        stockTotal,
-                        valorTotal: valorTotalInventario.toFixed(2),// quitar los decimales
-                    },
-                }
-    }
-        });
-    } catch (error) {
-        console.error('Error en getEstadisticasCategoria:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al obtener estadisticas de categoria',
-            error: error.message
-        });
-    }
 };
 
+// Exportar todos los controladores
 module.exports = {
     getProductos,
     getproductoById,
