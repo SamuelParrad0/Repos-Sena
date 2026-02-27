@@ -600,5 +600,5 @@ module.exports = {
     actualizarProducto,
     toggleproducto,
     eliminarProducto,
-    getEstadisticasProducto
+    actualizarStock
 };
