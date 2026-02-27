@@ -470,9 +470,9 @@ const toggleproducto = async (req, res) => {
     }
 };
     /**
-     * Eliminar un producto
+     * Eliminar un Producto
      * DELETE /api/admin/productos/:id
-     * solo eliminar cuando no tenga subcategorias ni productos relacionados
+     * Elimina el producto y su imagen
      * @param {object} req - request express
      * @param {object} res - response express
      */
@@ -488,6 +488,88 @@ const toggleproducto = async (req, res) => {
                     message: 'Producto no encontrado'
                 });
             }
+
+            // el hook beforeDestroy se encarga de eliminar la imagen
+            await producto.destroy();
+
+            res.json({
+                success: true,
+                message: 'Producto eliminado exitosamente'
+            });
+
+        } catch (error) {
+            console.error('Error en eliminar Producto: ', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error al eliminar producto',
+                error: error.message
+            });
+        }
+    };
+
+    /**
+     * Actualizar stock de un producto
+     * 
+     * PATCH /api/admin/productos/:id/stock
+     * body: {cantidad, operacion: 'aumentar' | 'reducir' | 'establecer' }
+     * @param {Object} req request Express
+     * @param {Object} res response Express
+     */
+    const actualizarStock = async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { cantidad, operacion } = req.body;
+            
+            if (!cantidad || !operacion) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Se requiere cantidad y operacion'
+                });
+            }
+
+            const cantidadNUm = parseInt(cantidad);
+            if (cantidadNUm < 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La cantidad no puede ser negativa'
+                });
+            }
+            const producto = await Producto.findByPk (id);
+
+            if (!producto) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Producto no encontrado'
+                });
+            }
+
+            let nuevoStock;
+
+            switch (operacion) {
+                case 'aumentar':
+                    nuevoStock = producto.aumentarStock(cantidadNUm);
+                    break;
+                case 'reducir':
+                    if (cantidadNUm > producto.stock) {
+                        return res.status(400).json({
+                            success: false,
+                            message: `No hay suficiente stock. stock actual: ${producto.stock}`
+                        });
+                    }
+                    nuevoStock = producto.reducirStock(cantidadNUm);
+                    break;
+                case 'establecer':
+                    nuevoStock = cantidadNUm;
+                    break;
+                default: 
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Operacion invalida usa aumentar, reducir o establecer'
+                    });
+            }
+        }
+    }
+
             //validar verificacion que no tenga productos relacionados
             const subcategorias = await subcategoria.count({
                 where: { categoriaID: id }
