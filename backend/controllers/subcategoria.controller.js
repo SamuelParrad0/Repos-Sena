@@ -520,8 +520,6 @@ const actualizarSubcategoria = async (req, res) => {
         }
     };
 
-    console.log('halo')
-
     // Exportar todos los controladores
     module.exports = {
         getSubcategorias,
