@@ -308,4 +308,45 @@ const eliminarItemCarrito = async (req, res) => {
             error: error.message
         });
     }
+}; 
+
+/**
+ * vaciar todo el carrito
+ * DELETE /api/carrito/vaciar
+ * 
+ */
+
+const vaciarCarrito = async (req, res) => {
+    try {
+        //Eliminar todos los items del usuaario
+        const numEliminados = await Carrito.destroy({
+            where: {
+                usuarioId: req.usuario.id,
+            }
+        });
+
+        res.json({
+            success: true,
+            message: 'Carrito vaciado',
+            data : {
+                itemsEliminados
+            }
+        });
+    } catch (error) {
+        console.error('Error en vaciarCarrito', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al vaciar el carrito',
+            error: error.message
+        });
+    }
 };
+
+//Exportar modelos
+model.exports = {
+    getCarrito,
+    agregarAlCarrito,
+    actualizarItemCarrito,
+    eliminarItemCarrito,
+    vaciarCarrito
+}
