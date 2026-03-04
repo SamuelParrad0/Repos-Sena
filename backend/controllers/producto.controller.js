@@ -37,8 +37,8 @@ const getProductos = async (req, res) => {
         // construir filtros 
             const where = {};
 
-        if (categoriaID)    where.categoriaID = categoriaID;
-        if (subcategoriaID)  where.subcategoriaID = subcategoriaID;
+        if (categoriaId)    where.categoriaId = categoriaId;
+        if (subcategoriaId)  where.subcategoriaId = subcategoriaId;
         if (activo !== undefined) where.activo = activo === 'true';
         if (constock === 'true') where.stock = { [Op.gt]: 0 };
 
