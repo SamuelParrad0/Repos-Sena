@@ -251,214 +251,133 @@ const actualizarUsuario = async (req, res) => {
 
 /**
  * Activar/Desactivar categoria
- * PATCH /api/admin/categorias/:id/estado
+ * PATCH /api/admin/usuario/:id/estado
  * 
- * Al desactivar una categoria se desactivan todas las subcategorias relacionadas
- * Al desactivar una subcategoria se desactivan todos los productos relacionados
+ * Al desacticvar usuario
  * @param {Object} req request Express
  * @param {Object} res response Express
  */
-const toggleCategoria = async (req, res) => {
+const toggleUsuario = async (req, res) => {
     try {
         const {id} = req.params;
 
-        //Buscar categoria
-        const categoria = await Categoria.findByPk(id);
+        //Buscar usuario
+        const usuario = await Usuario.findByPk(id);
 
         if(!categoria) {
             return res.status(404).json({
                 success: false,
-                message: 'Categoria no encontrada'
+                message: 'Usuario no encontrada'
+            });
+        }
+        //no permitir desactivar el propio admin
+        if (usuario.id === req.usuari.id) {
+            return res.status(400).json({
+                success: false,
+                message: 'No puedes desactivar tu propia cuenta'
             });
         }
 
-        //Alternar estado activo
-        const nuevoEstado = !categoria.activo;
-        categoria.activo = nuevoEstado;
+        usuario.activo = !usuario.activo;
+        await usuario.save();
 
-        // Guardar cambios
-        await categoria.save();
-
-        //Contar cuantos registros se afectaron 
-        const subcategoriasAfectadas = await Subcategoria.count({ where: { categoriaId:id}
-        });
-
-        const productosAfectadas = await Producto.count({ where: { categoriaId:id}
-        });
-
-        //Respuesta exitosa
         res.json({
             success: true,
-            message: `Categoria ${nuevoEstado ? 'activada' : 'desactivada'} exitosamente`,
-            data:{
-                categoria,
-                afectados: {
-                    subcategorias: subcategoriasAfectadas,
-                    productos: productosAfectados
-                }
+            message: `Usuario ${usuario.activo ? 'activo' : 'desactivo'} exitosamente`,
+            data: {
+                usuario: usuario.toJSON()
             }
         });
 
     } catch (error) {
-        console.error('Error en toggleCategoria:', error);
+        console.error('Error an toggleUsuario: ', error);
         res.status(500).json({
             success: false,
-            message: 'Error al cambiar estado de la categoria',
+            message: 'Error al cambiar estado del usuario',
             error: error.message
         });
     }
 };
 
+
 /**
- * Eliminar categoria
- * DELETE /api/admin/categorias/:id
- * Solo permite eliminar si no tiene subcategorias ni productos relacionados
+ * Eliminar usuario
+ * DELETE /api/admin/usuario/:id
  * @param {Object} req request Express
  * @param {Object} res response Express
  */
-const eliminarCategoria = async (req, res) => {
+const eliminarUsuario = async (req, res) => {
     try {
         const { id } = req.params;
 
-        //Buscar categoria
-        const categoria = await Categoria.findByPk(id);
+        //Buscar usuario
+        const usuario = await Usuario.findByPk(id);
 
-        if (!categoria) {
+        if (!usuario) {
             return res.status(404).json({
                 success: false,
-                message: 'Categoria no encontrada'
+                message: 'Usuario no encontrado'
             });
         }
-
-        //Validacion verificar que no tenga subcategorias
-        const subcategorias = await Subcategoria.count({
-            where: { categoriaId: id }
-        });
-
-        if (subcategorias > 0) {
-            return res.status(400).json({
+        //no permitir eliminar al proio admin
+        if (usuario.id === req.usuario.id) {
+            return res.status(400)({
                 success: false,
-                message: `No se puede eliminar la categoria porque tiene ${subcategorias} subcategorias asociadas, usa PATCH /api/admin/categorias/:id toogle para desactivarla en lugar de eliminarla `
+                message: 'No puedes eliminar tu propia cuenta'
             });
         }
-
-        //Validacion verificar que no tenga productos
-        const productos = await Producto.count({
-            where: { categoriaId: id }
-        });
-
-        if (productos > 0) {
-            return res.status(400).json({
-                success: false,
-                message: `No se puede eliminar la categoria porque tiene ${productos} productos asociadas, usa PATCH /api/admin/categorias/:id toogle para desactivarla en lugar de eliminarla `
-            });
-        }
-
-        //Eliminar categoria
-        await categoria.destroy();
-
+        await usuario.destroy();
+        
         //Respuesta Exitosa
         res.json({
             success: true,
-            message: 'Categoria eliminada Exitosamente'
+            message: 'Usuario eliminado Exitosamente'
         });
     }  catch (error) {
-        console.error('Error al eliminar categoria', error);
+        console.error('Error al eliminar usuario', error);
         res.status(400).json({
             success: false,
-            message: 'Error al eliminar categoria',
+            message: 'Error al eliminar usuario',
             error: error.message
         });
     }
 };
 
 /**
- * Obtener estadisticas de una categoria
- * GET /api/admin/categorias/:id/estadisticas
- * retorna 
- * Total de subcategorias activas / inactivas
- * total de productos activos / inactivos
- * valor total del inventario
- * stock total
+ * Obtener estadisticas de usuarios
+ * GET /api/admin/usuarios/:id/estadisticas
+ * 
  * @param {Object} req request Express|}
  * @param {Object} res response Express
  */
-const getEstadisticasCategoria = async (req, res) => {
+const getEstadisticasUsuarios = async (req, res) => {
     try {
-        const { id } = req.params;
-
-        //Verificar que la categoria exista
-        const categoria = await Categoria.findByPk (id);
-
-        if (!categoria) {
-            return res.status(400).json({
-                success: false,
-                message: 'categoria no encontrada'
-            });
-        }
-
-        //contar subcategorias 
-        const totalSubcategorias = await Subcategoria.count({
-            where: { categoriaId: id }
-        });
-        const subcategoriasActivas = await Subcategoria.count({
-            where: { categoriaId: id, activo: true }
-        });
-
-        //contar productos
-        const totalProductos = await Producto.count({
-            where: { categoriaId: id }
-        });
-        const productosActivos = await Producto.count({
-            where: { categoriaId: id, activo: true }
-        });
-
-        //obtener productos para calcular estadisticas
-        const productos = await Producto.findAll({
-            where: { categoriaId: id },
-            attributes: ['precio', 'stock']
-        });
-
-        //calcular estadisticas de inventario
-        let valorTotalInventario = 0;
-        let stockTotal = 0;
-        
-        productos.forEach(producto => {
-            valorTotalInventario += parseFloat(producto.precio) * producto.stock;
-            stockTotal += producto.stock;
-        });
+        //datos de usuarios
+        const totalUsuarios = await Usuario.count ();
+        const totalClientes = await Usuario.count ({ where: { rol: 'cliente'}});
+        const totalAdmins = await Usuario.count ({ where: { rol: 'administrador'}});
+        const usuariosActivos = await Usuario.count ({ where: {activo: true} });
+        const usuariosInactivos = await Usuario.count ({ where: {activo: false} });
 
         //Respuesta Exitosa
 
         res.json({
             success: true,
             data: {
-                categoria: {
-                    id: categoria.id,
-                    nombre: categoria.nombre,
-                    activo: categoria.activo
+                total: totalUsuarios,
+                porRol: {
+                    clientes: totalClientes,
+                    administradotes: totalAdmins,
                 },
-                estadisticas:{
-                    subcategoria: {
-                        total: totalSubcategorias,
-                        activas: subcategoriasActivas,
-                        inactivas: totalSubcategorias - subcategoriasActivas
+                porEstado:{
+                        activos: usuariosActivos,
+                        inactivos: usuariosInactivos
                     },
-                    productos: {
-                        total: totalProductos,
-                        activos: productosActivos,
-                        inactivo: totalProductos - productosActivos
-                    },
-                    inventario: {
-                        stockTotal,
-                        valorTotal: valorTotalInventario.toFixed(2),//quitar decimales
-                    }
-                }
             }
         });
 
     } catch (error) {
-        console.error('Error en getEstadisticasCategoria: ', error);
+        console.error('Error en getEstadisticasUsuarios: ', error);
         res.status(500).json({
             success: false,
             message: 'Error al obtener estadisticas',
@@ -469,11 +388,11 @@ const getEstadisticasCategoria = async (req, res) => {
 
 //Exportar todos los controladores
 module.exports = {
-   getCategorias,
-   getCategoriasById,
-   crearCategoria,
-   actualizarCategoria,
-   toggleCategoria,
-   eliminarCategoria,
-   getEstadisticasCategoria 
+   getEstadisticasUsuarios,
+   getUsuarioById,
+   getUsuarios,
+   crearUsuario,
+   eliminarUsuario,
+   toggleUsuario,
+   actualizarUsuario
 };
