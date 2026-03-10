@@ -127,13 +127,101 @@ app.use((req, res) => {
     });
 });
 
-// manejo de rutas no encontradas (404)
+//Manejo de errores globales
+app.use((err, req, res, next) => {
+    console.error('Error:', err.message);
+    // Manejo de errores globales
 
-app.use((req, res) => {
-    res.status(404).json({
+    app.use((err, req, res, next) => {
+        console.error('Error:', err.message);
+        // Error de multer subida de archivos
+        if(err.name === 'MulterError') {
+            return res.status(400).json({
+                success: false,
+                message: 'Error al subir el archivo',
+                error: err.message
+            });
+        }
+    });
+
+    // Otros errores
+    res.status(500).json({
         success: false,
-        message: 'Ruta no encontrada',
-        path: req.path,
+        message: err.message || 'Error interno del servidor',
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     });
 });
 
+//inicializar servidor y base de datos
+
+/**
+ * funcion principal para inciar el servicor
+ * prueba la conexion a MySQL
+ * sincroniza los modelos (crea las tablas)
+ * inicia el servidor express
+ */
+
+const startServer = async () => {
+    try {
+        //paso 1 probar conexion de mysql
+        console.log('conectado a mysql...');
+        const dbConnected = await dbConfig.testConnection();
+
+        if (!dbConnected) {
+            console.error(' No se pudo conectar a Mysql verificar XAMPP y el archivo .env');
+            process.exit(1); //salir si no hay conexion
+        }
+
+        //paso 2 sincronizar modelos (crear tablas)
+        console.log('sincronizando modelos con la base de datos...');
+
+        //Inicializar asociaciones entre los modelos
+        initAssociations();
+        //en desarrollo alter puede ser true para actualizar la estructura 
+        //en produccion debe ser false para no perder los datos
+        const alterTables = process.env.NODE_ENV === 'development';
+        const dbSynced = await syncDatabase(false, alterTables);
+
+        if (!dbSynced) {
+            console.error('X Error al sincronizar la base de datos');
+            process.exit(1);
+        }
+
+        //paso 3 ejecutar seeders datos iniciales
+        await runSeeders();
+
+        //paso 4 iniciar servidor express
+        app.listen(PORT, () => {
+            console.log('\n __________');
+            console.log(`Servidor corriendo en el puerto ${PORT}`);
+            console.log(`URL: http://localhost:${PORT}`);
+            console.log(`Base de datos${process.env.DB_NAME}`);
+            console.log(`Modo: ${process.env.NODE_ENV}`);
+            console.log('Servidor listo para realizar peticiones');
+        });
+    } catch (error) {
+        console.error('X Error fatal al inicar el servidor: ', error.message);
+        process.exit(1)
+    }
+};
+
+//manejo de cierre
+//captura el ctrl+c para cerrar el servidor correctamente
+
+process.on('SIGINT', () => {
+    console.log('\n\n cerrando servidor...');
+    process.exit(0);
+});
+
+//capturar errores no menjados
+
+process.on('unhandledRejection', (err) => {
+    console.error('X error no manejado', err);
+    process.exit(1);
+});
+
+//inicar servidor
+startServer();
+
+//exportar app para tsting
+module.exports = app;
