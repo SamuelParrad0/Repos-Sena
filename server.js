@@ -26,6 +26,8 @@ const {initAssociations} = require ('./backend/models');
 
 // Importar seeders 
 const {runSeeders} = require ('./seeders/adminSeeder');
+const { version } = require('os');
+const { timeStamp } = require('console');
 
 // crear aplicaciones express 
 
@@ -68,5 +70,70 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 //muestra en consola cada peticion que llega el servidor
 
 if (process.env.NODE_ENV === 'development') {
-    app.use((req, res, next))
+    app.use((req, res, next) => {
+        console.log(`ok${req.method} ${req.path}`);
+        next();
+    });
 }
+
+//rutas
+
+//rutas raiz verificar el servidor esta corriendo
+
+app.get ('/', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Servidor E-commerce backend corriendo correctamente',
+        version : '1.0.0',
+        timeStamp: new Date().toISOString(),
+    });
+});
+
+//ruta de salud para verificar el servidor como esta
+app.get ('api/health', (req, res) => {
+    res.json({
+        success: true,
+        status: 'healthy',
+        database: 'connected',
+        timeStamp: new Date().toISOString(),
+    });
+});
+
+//rutas api
+
+//rutas de autentiacion
+//incluye registro login, perfil
+
+const authRoutes = require ('./routes/auth.routes');
+app.use('/api/auth', authRoutes);
+
+//rutas del administrador
+//requieren autenticacion y rol del administrador
+
+const adminRoutes = require('./routes/admin.routes');
+app.use('/api/admin', adminRoutes);
+
+//rutas del cliente
+const clienteRoutes = require('./routes/acliente.routes');
+app.use('/api/', clienteRoutes);
+
+// manejo de rutas no encontradas (404)
+
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Ruta no encontrada',
+        path: req.path,
+    });
+});
+
+// manejo de rutas no encontradas (404)
+
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Ruta no encontrada',
+        path: req.path,
+    });
+});
+
