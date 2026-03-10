@@ -248,7 +248,7 @@ const getCategorias = async (req, res) => {
  */
 
 
-const getSubcategoriasPorCategorias = async (req, res) => {
+const getSubcategoriasPorCategoria = async (req, res) => {
     try {
         const { id } = req.params;
         const { Op } = require('sequelize');
@@ -370,6 +370,6 @@ module.exports = {
     getProductos,
     getproductoById,
     getCategorias,
-    getSubcategoriasPorCategorias,
+    getSubcategoriasPorCategoria,
     getProductosDestacados
 };
