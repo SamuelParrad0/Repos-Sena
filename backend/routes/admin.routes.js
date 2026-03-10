@@ -29,7 +29,7 @@ router.use(verificarAuth, esAdminOAuxiliar);
 router.get('/categorias', categoriaController.getCategorias);
 
 //get /api/admin/categoria:id
-router.get('/categorias/:id', categoriaController.getCategoriaById);
+router.get('/categorias/:id', categoriaController.getCategoriasById);
 
 //get /api/admin/categorias/:id/stats
 router.get('/categorias:id/stats', categoriaController.getEstadisticasCategoria);
@@ -54,7 +54,7 @@ router.post('/categorias/:id', soloAdministrador, categoriaController.eliminarCa
 router.get('/subcategorias', subcategoriaController.getSubcategorias);
 
 //get /api/admin/subcategorias:id
-router.get('/subcategorias/:id', subcategoriaController.getSubcategoriaById);
+router.get('/subcategorias/:id', subcategoriaController.getSubcategoriasById);
 
 //get /api/admin/subcategorias/:id/stats
 router.get('/subcategorias:id/stats', subcategoriaController.getEstadisticasSubcategoria);
@@ -122,23 +122,23 @@ router.post('/usuarios/:id', soloAdministrador, usuarioController.eliminarUsuari
 // PEDIDOS */
 
 //rutas de pedidos
-//get /api/admin/subcategorias
-router.get('/subcategorias', subcategoriaController.getSubcategorias);
+//get /api/admin/pedidos
+router.get('/pedidos', pedidoController.getAllPedidos);
 
-//get /api/admin/subcategorias:id
-router.get('/subcategorias/:id', subcategoriaController.getSubcategoriaById);
+//get /api/admin/pedidos:id
+router.get('/pedidos/:id', pedidoController.getPedidoById);
 
-//get /api/admin/subcategorias/:id/stats
-router.get('/subcategorias:id/stats', subcategoriaController.getEstadisticasSubcategoria);
+//get /api/admin/pedidos/:id/stats
+router.get('/pedidos:id/stats', pedidoController.getEstadisticasPedidos);
 
-//POST /api/admin/subcategorias
-router.post('/subcategorias', subcategoriaController.crearSubcategoria);
+//POST /api/admin/pedidos
+router.post('/pedidos', pedidoController.crearPedido);
 
-//PUT /api/admin/subcategorias
-router.put('/subcategorias', subcategoriaController.actualizarSubcategoria);
+//PUT /api/admin/pedidos
+router.put('/pedidos', pedidoController.actualizarEstadoPedido);
 
-//patch /api/admin/subcategorias:id/toggle desactivar o activar categoria
-router.patch('/subcategorias/:id/toggle', subcategoriaController.toggleSubcategoria);
+//patch /api/admin/pedidos:id/toggle desactivar o activar categoria
+router.patch('/pedidos/:id/toggle', pedidoController.togglePedido);
 
-//delete /api/admin/subcategorias
-router.post('/subcategorias/:id', soloAdministrador, subcategoriaController.eliminarSubcategoria);
+//delete /api/admin/pedidos
+router.post('/pedidos/:id', soloAdministrador, pedidoController.eliminarPedido);
