@@ -1,18 +1,18 @@
 /**CONFIGURACION DE LA BASE DE DATOS */
 
-//Importar Sequelize
-const {Sequelize} = require('sequlize');
+//Importar Sequelize tamibe, el que conecta directamente con la base de datos
+const {sequelize} = require('sequelize'); //el SEQUELIZE es el que permite trabajar con la base de datos directamente con el codigo de JavaScript
 
 //Importar dotenv para variables de entorno
-require('dotenv').config();
+require('dotenv').config(); //llama directamente las variables de entorno
 
-//  Crear instancias de secualize
-const sequelize = new Sequelize(
+//  Crear instancias de sequelize
+const sequelize = new Sequelize( //el .env son las conexiones de las variables de entorno
     process.env.DB_NAME,
     process.env.DB_USER,
     process.env.DB_PASSWORD,
     {
-        host: process.env.DB_HOST,
+        host: process.env.DB_HOST, //
         port: process.env.DB_PORT,
         dialect: 'mysql',
         
@@ -21,8 +21,8 @@ const sequelize = new Sequelize(
         pool: {
             max: 5,
             min: 0,
-            acquire: 30000,
-            idle: 10000
+            acquire: 30000, //tiempo en milisegundos para conectarse exitosamente
+            idle: 10000 //tiempo maximo para que el programam se quede quieto
         },
         //Configuracion del logging
         //permite ver las consultas de mysql por consola
@@ -33,15 +33,15 @@ const sequelize = new Sequelize(
         timezone: '-05:00', //Zona horaria de colombia
 
         //Opciones adicionales
-        define: {
+        define: { //- son las opciones que van a aplicar en todos los modelos por defecto
             //timestamps: true crea automaticamente los campos createdAt y updateAt
-            timestramps: true,
+            timestamps: true, //- crea los campos automaticamente los campos de crear y actualizar
 
             //Underscored: true una snake_case para nombres de las columnas
             underscored: false,
 
             //freezeTableName: true usa el nombre del modelo tal cual para la tabla
-            freezeTableName: true
+            freezeTableName: true //- usa el nombre exacto del modelo para las tablas
 
         }
 
@@ -72,10 +72,11 @@ const testConnection = async () => {
 * @param {bolean} alter - si es true, modifica las tablas existentes para qeue coincidan con los modelos
 */
 
+//syncDatabase: esta para comparar directamente con los modelos y con la base de datos
 const syncDatabase = async (force = false, alter = false) => {
     try {
         //Sincronizar todos los modelos con la base de datos
-        await sequelize.sync({force, alter});
+        await sequelize.sync({force, alter}); //forza a modificar tal cual como esta el modelo, alter 
         
         if (force) {
             console.log('Base de datos sincronizada (todas las tablas recreadas).');
@@ -85,7 +86,7 @@ const syncDatabase = async (force = false, alter = false) => {
             console.log('Base de datos sincronizada correctamente.');
         }
 
-        return true;
+        return true; //todo paso exitosamente y no paso nada
     } catch (error) {
         console.error('X Error al sincronizar la base de datos:', error.message);
         return false;
