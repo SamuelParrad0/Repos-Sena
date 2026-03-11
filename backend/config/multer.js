@@ -9,21 +9,21 @@
 const multer = require('multer');
 
 //Importar path para trabajar con rutas de archivos
-const path = require('path');
+const path = require('path');//le crea directamente la ruta a los archivos
 
 //Importar fs para verificar /crear directorios
-const fs = require('fs');
+const fs = require('fs'); //es el modulo nativo que permite leer, escribir, eliminar y modificar archivos y carpetas
 
 //Importar dotenv para variables de entorno
-require('dotenv').config();
+require('dotenv').config(); //importa todas las conexiones con las variables de entorno
 
 //Obtener la ruta donde se guardan los archivos 
-const uploadPath = process.env.UPLOAD_PATH || './uploads';
+const uploadPath = process.env.UPLOAD_PATH || './uploads'; //verifica y compara que la carpeta destinatoria sea la misma del .env
 
 //Verificar si la carpeta uploads existe, si no crearla
-if (!fs.existsSync(uploadPath)) {
-    fs.mkdirSync(uploadPath, {recursive: true});
-    console.log(`Carpeta ${uploadPath} creada`);
+if (!fs.existsSync(uploadPath)) { //si no esta la carpeta, la crea
+    fs.mkdirSync(uploadPath, {recursive: true}); //mkdir es para que cree archivos
+    console.log(`Carpeta ${uploadPath} creada`); //la carpeta fue creada
 }
 
 /**
@@ -39,7 +39,7 @@ const storage = multer.diskStorage({
    * @param {Object} file - Archivo que esta subiendo
    * @param {Function} cb . Callback que se llama con (error, destination)
    */  
-   destination: function (req, file, cb) {
+   destination: function (req, file, cb) { //- busca la ruta directamente donde va a crear la ruta o el archivo 
     //cb(null, ruta) -> sin error, ruta = carpeta destino
     cb(null, uploadPath);
    },
@@ -52,12 +52,11 @@ const storage = multer.diskStorage({
  * @param {Object} file - Archivo que se esta subiendo 
  * @param {Function} cb - Callback que se llama con (error, filename)
  */
-filename: function (req, file, cb) {
+filename: function (req, file, cb) { //crea el nombre del archivo
     //Generar nombre unico usando timestamp + nombre original
     //Date.now() genera un timestamp unico
     //path.extname() extrae la extension del archivo (.jpg, .png, etc)
-    const uniqueName = Date.now() + '-' + file.
-    originalname;
+    const uniqueName = Date.now() + '-' + file.originalname;
     cb(null, uniqueName);
 }
 });
@@ -70,7 +69,7 @@ filename: function (req, file, cb) {
  * @param {Object} file - Archivo que se esta subiendo
  * @param {Function} cb - Callback que se llama con (error, acceptFile)
  */
-const filefilter = (req, file, cb) => {
+const filefilter = (req, file, cb) => { //verifica si permite los parametros pre establecidos de guardado
     //Tipos Mime permitidos para imagenes
     const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
 
@@ -107,7 +106,7 @@ const upload = multer ({
  * @returns {Boolean} - true si se elimino, false si hubo un error
  */
 
-const deletefile = (filename) => {
+const deletefile = (filename) => { //consulta la ruta directamente del archivo para eliminarlo
     try {
         //Construir la ruta completa del archivo
         const filePath = path.join(uploadPath, filename);
