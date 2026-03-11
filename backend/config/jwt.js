@@ -5,6 +5,8 @@
  */
 
 //Importar jsonwebtoken para manejar los tokens 
+//genera un token unico para cada usuario
+//jsonwebtoken los codifica, decodifica y verifica
 const jwt = require('jsonwebtoken');
 
 //Importar dotenv para acceder a las variables de entorno
@@ -30,8 +32,8 @@ const generateToken = (payload) => {
             { expiresIn: process.env.JWT_EXPIRES_IN } // Tiempo de expiracion
         );
 
-        return token;  
-    } catch (error) {
+        return token; //si esta bien, le retorna el token
+    } catch (error) { //si no, toca revisar
         console.error('Error al generar token JWT:', error.message);
         throw new Error('Error al generar token de autenticacion');
     }
@@ -51,8 +53,9 @@ const verifyToken = (token) => {
         //Parametros:
         //1. token: el token JWT a verificar
         //2. secret: la misma clave secreta usada para firmarlo
-        const decoded  = jwt.verify(token, process.env.JWT_SECRET);
-        return decoded;
+        const decoded  = jwt.verify(token, process.env.JWT_SECRET); //la decodifica y la verifica, que la contraseña este bien
+
+        return decoded;//retorna la contraseña decodificada
     } catch (error) {
         //Diferentes tipos de errores
         if (error.name === 'TokenexpiredError') {
@@ -76,6 +79,8 @@ const extractToken = (authHeader) => {
     if (authHeader && authHeader.startsWith('Bearer')) {
         //Extraer solo el token (quitar "Bearer")
         return authHeader.substring(7);
+        //7 caracteres adicionales de seguridad
+        //deben removerse los 7 caracteres para usarlos
     }
 
     return null; // no se encuentra un token valido
