@@ -8,7 +8,7 @@
  */
 
 const Usuario = require('../models/Usuario');
-const { generarToken } = require('../config/jwt');
+const { generateToken } = require('../config/jwt');
 
 /**
  * Obtener todos los usuarios
