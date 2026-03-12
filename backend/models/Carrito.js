@@ -142,6 +142,7 @@
             //Guardar el precio actual del producto
             itemCarrito.precioUnitario = producto.precio
         },
+        
         /**
          * beforeUpdate: se ejecuta antes de actualizar un carrito
          * valida que haya stock suficiente si se aumenta la cantidad 
