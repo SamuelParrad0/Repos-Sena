@@ -1,7 +1,10 @@
 /**CONFIGURACION DE LA BASE DE DATOS */
 
-//Importar Sequelize tamibe, el que conecta directamente con la base de datos
-const {sequelize} = require('sequelize'); //el SEQUELIZE es el que permite trabajar con la base de datos directamente con el codigo de JavaScript
+// Importar la clase Sequelize correctamente. Anteriormente se intentaba
+// desestructurar `{ sequelize }` de la exportación del paquete, lo cual
+// devuelve `undefined` y provoca el error MODULE_NOT_FOUND visto en
+// server.js:10 cuando se intentaba usar la variable.
+const { Sequelize } = require('sequelize'); //clase usada para instanciar la conexión
 
 //Importar dotenv para variables de entorno
 require('dotenv').config(); //llama directamente las variables de entorno

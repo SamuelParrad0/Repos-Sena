@@ -4,10 +4,11 @@
  * se usa para las rutas protegidas que requieren autenticacion
  */
 
-//importar funciones de JWT
-const jwt = { verifyToken, extractToken } = require('../config/jwt');
-
-const { extractToken } = require('../config/jwt');
+// importar funciones de JWT
+// Evitamos la asignación confusa que generaba un ReferenceError
+// al intentar usar `extractToken` antes de inicializarla.
+// Simplemente desestructuramos las funciones que necesitamos.
+const { verifyToken, extractToken } = require('../config/jwt');
 //importar modelo de usuario
 const Usuario = require ('../models/Usuario');
 

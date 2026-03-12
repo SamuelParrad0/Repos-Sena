@@ -185,17 +185,18 @@ DetallePedido.belongsTo(Producto, {
 
 /**
  * relacion de muchos a muchos
- * pedido y producto tiene una relacion de muchos a muchos atravez de detalle pedido
+ * pedido y producto tiene una relacion de muchos a muchos a traves de detalle pedido
+ * Sequelize requiere belongsToMany para N:M, no hasMany (error mostrado en log).
  */
 
-Pedido.hasMany(Producto, {
+Pedido.belongsToMany(Producto, {
     through: DetallePedido, //tabla intermedia
     foreignKey: 'pedidoId', //Campo que conecta las tablas
     otherKey: 'productoId', //Campo que conecta las tablas
     as: 'productos', //Alias para la relacion
 });
 
-Producto.hasMany(Pedido, {
+Producto.belongsToMany(Pedido, {
     through: DetallePedido, //tabla intermedia
     foreignKey: 'productoId', //Campo que conecta las tablas
     otherKey: 'pedidoId', //Campo que conecta las tablas

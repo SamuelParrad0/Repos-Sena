@@ -343,7 +343,7 @@ const vaciarCarrito = async (req, res) => {
 };
 
 //Exportar modelos
-model.exports = {
+module.exports = {
     getCarrito,
     agregarAlCarrito,
     actualizarItemCarrito,

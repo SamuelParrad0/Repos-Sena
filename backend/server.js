@@ -114,7 +114,8 @@ const adminRoutes = require('./routes/admin.routes');
 app.use('/api/admin', adminRoutes);
 
 //rutas del cliente
-const clienteRoutes = require('./routes/acliente.routes');
+// el archivo real se llama cliente.routes.js, no "acliente"
+const clienteRoutes = require('./routes/cliente.routes');
 app.use('/api', clienteRoutes);
 
 // manejo de rutas no encontradas (404)

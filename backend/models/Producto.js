@@ -182,21 +182,21 @@
          */
         beforeCreate: async (producto) => {
             const Categoria = require('./Categoria');
-            const Subcategoria = require('./Subcategoria');
+            const SubcategoriaModel = require('./Subcategoria');
 
             //Buscar subcategoria padre
-            const Subcategoria = await Subcategoria.findByPk(producto.SubcategoriaId);
+            const subcategoria = await SubcategoriaModel.findByPk(producto.subcategoriaId);
 
             if (!subcategoria) {
-                throw new Error ('La subcategoria seleccionada no existe');
+                throw new Error('La subcategoria seleccionada no existe');
             }
 
             if (!subcategoria.activo) {
-                throw new Error('No se puede crear una subcategoria en una categoria inactiva');
+                throw new Error('No se puede crear un producto en una subcategoria inactiva');
             }
 
 
-        //Buscar categoria padre
+            //Buscar categoria padre
             const categoria = await Categoria.findByPk(producto.categoriaId);
 
             if (!categoria) {
@@ -207,9 +207,9 @@
                 throw new Error('No se puede crear un producto en una categoria inactiva');
             }
 
-            //validar que la subcategoria pertenezca a una categoria
+            //validar que la subcategoria pertenezca a la categoria
             if (subcategoria.categoriaId !== producto.categoriaId) {
-                throw new Error('La subcategoria no pertenece a la categoria seleccionada')
+                throw new Error('La subcategoria no pertenece a la categoria seleccionada');
             }
         },
 
@@ -283,4 +283,6 @@ Producto.prototype.aumentarStock = async function (
 };
 
 // Exportar modelo Producto
-module.exports = producto;
+// (la variable se definió como `Producto` arriba, el uso de `producto`
+// provocaba ReferenceError al cargar el módulo)
+module.exports = Producto;

@@ -133,7 +133,8 @@ const getCategoriasById = async (req, res) => {
  * @param {Object} res response Express
  */
 
-const crearCategoria = async (res, res) => {
+// correción: los parámetros deben ser (req, res), no (res, res)
+const crearCategoria = async (req, res) => {
     try {
         const {nombre, descripcion} = req.body;
 

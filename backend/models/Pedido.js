@@ -14,7 +14,10 @@
  /**
   * Definir el modelo de Pedido
   */
- const Pedidoo = sequelize.define('Pedido', {
+ // Definir el modelo Pedido; la variable debe llamarse `Pedido` para que
+ // el resto del archivo la pueda usar (se había escrito "Pedidoo" por error
+ // lo que provocaba el ReferenceError al final del módulo).
+ const Pedido = sequelize.define('Pedido', {
     //Campos de la tabla
     //Id Identificador unico (PRIMARY KEY)
     id: {
