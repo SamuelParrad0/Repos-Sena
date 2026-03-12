@@ -11,8 +11,6 @@
 
  //Importar instancia de sequelize
  const { sequelize } = require('../config/database');
-const { before } = require('node:test');
-const Categoria = require('./Categoria');
 
  /**
   * Definir el modelo de Producto
@@ -21,7 +19,7 @@ const Categoria = require('./Categoria');
     //Campos de la tabla
     //Id Identificador unico (PRIMARY KEY)
     id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.INTEGER, //dato tipo int directamente en mysql
         primaryKey: true,
         autoIncrement: true,
         allowNull: false
