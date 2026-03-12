@@ -33,7 +33,7 @@ const getCarrito = async (req, res) => {
                             attributes: ['id', 'nombre']
                         },
                         {
-                            model: Subategoria,
+                            model: Subcategoria,
                             as: 'subcategoria',
                             attributes: ['id', 'nombre']
                         },
@@ -44,7 +44,7 @@ const getCarrito = async (req, res) => {
         });
 
         // calcular el total del carrito
-        let totalCarrito = 0;
+        let total = 0;
         itemsCarrito.forEach(item => {
             total += parseFloat(item.precioUnitario) * item.cantidad;
         });
@@ -57,7 +57,7 @@ const getCarrito = async (req, res) => {
             resumen: {
                 totalItems: itemsCarrito.length,
                 cantidadTotal: itemsCarrito.reduce ((sum, item) => sum + item.cantidad,0),
-                totalCarrito: total.toFixed(2)
+                total: total.toFixed(2)
             }
         }
     });
@@ -79,7 +79,7 @@ const getCarrito = async (req, res) => {
  */
 const agregarAlCarrito = async (req, res) => {
     try {
-        const { productoId, cantidad=1 } = req.body;
+        const { productoId, cantidad = 1 } = req.body;
         //validacion 1: campos requeridos
         if (!productoId) {
             return res.status(400).json({
@@ -88,9 +88,9 @@ const agregarAlCarrito = async (req, res) => {
             });
         }
 
-        //validacion 2 cantidad valida
-        const cantidadNUm = parseInt(cantidad);
-        if (cantidadNUm < 1) {
+        //validacion 2 cantidad valida 
+        const cantidadNum = parseInt(cantidad);
+        if (cantidadNum < 1) {
             return res.status(400).json({
                 success: false,
                 message: 'La cantidad debe ser al menos 1'
@@ -124,7 +124,7 @@ const agregarAlCarrito = async (req, res) => {
 
         if (itemExistente) {
             //Actualizar cantidad
-            const nuevaCantidad = itemExistente.cantidad + cantidadNUm;
+            const nuevaCantidad = itemExistente.cantidad + cantidadNum;
 
             //validar stock disponible
             if (nuevaCantidad > producto.stock) {
@@ -156,7 +156,7 @@ const agregarAlCarrito = async (req, res) => {
         }
 
         //validacion 5 stock disponible
-        if (cantidadNUm > producto.stock) {
+        if (cantidadNum > producto.stock) {
             return res.status(400).json({
                 success: false,
                 message: `Stock insuficiente . Disponible: ${producto.stock}`
@@ -167,7 +167,7 @@ const agregarAlCarrito = async (req, res) => {
         const nuevoItem = await Carrito.create({
             usuarioId: req.usuario.id,
             productoId,
-            cantidad: cantidadNUm,
+            cantidad: cantidadNum,
             precioUnitario: producto.precio
         });
 
