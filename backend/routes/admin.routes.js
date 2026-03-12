@@ -85,7 +85,7 @@ router.post('/subcategorias/:id', soloAdministrador, subcategoriaController.elim
 router.get('/productos', productoController.getProductos);
 
 //get /api/admin/productos:id
-router.get('/productos/:id', productoController.getproductoById);
+router.get('/productos/:id', productoController.getProductoById);
 
 //POST /api/admin/productos
 router.post('/productos', productoController.crearProducto);
@@ -94,7 +94,7 @@ router.post('/productos', productoController.crearProducto);
 router.put('/productos', productoController.actualizarProducto);
 
 //patch /api/admin/productos:id/toggle desactivar o activar categoria
-router.patch('/productos/:id/toggle', productoController.toggleproducto);
+router.patch('/productos/:id/toggle', productoController.toggleProducto);
 
 //delete /api/admin/productos
 router.post('/productos/:id', soloAdministrador, productoController.eliminarProducto);
