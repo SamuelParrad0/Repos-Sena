@@ -74,9 +74,9 @@
      rol: {
         type: DataTypes.ENUM('cliente', 'auxiliar', 'administrador'), // tres roles disponibles
         allowNull: false,
-        defaulValue: 'cliente', // por defecto es cliente
+        defaultValue: 'cliente', // por defecto es cliente
         validate: {
-            inIn: {
+            isIn: {
                 args: [['cliente', 'auxiliar', 'administrador']],
                 msg: 'El rol debe ser cliente, auxiliar o administrador'
             }
@@ -157,7 +157,7 @@
  */
         beforeUpdate: async (usuario) => {
             //Verificar si la contraseña fue modificada
-            if (categoria.changed('password')) {
+            if (usuario.changed('password')) {
                 const salt = await bcrypt.genSalt(10);
                 usuario.password = await bcrypt.hash(usuario.password, salt);
             }
