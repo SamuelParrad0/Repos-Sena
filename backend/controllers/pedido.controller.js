@@ -54,7 +54,7 @@ const crearPedido = async (req, res) => {
         //obtener items del carrito
 
         const itemsCarrito = await Carrito.findAll({
-            where: { usuarioId: req.usuario.usuarioId },
+            where: { usuarioId: req.usuario.id },
             include: [{
                 model: Producto,
                 as: 'producto',
@@ -107,15 +107,15 @@ const crearPedido = async (req, res) => {
         }
 
         //Crear pedido
-        const Pedido = await Pedido.create({
-            usuarioId: req.ususuario.Id,
+        const pedido = await Pedido.create({
+            usuarioId: req.usuario.id,
             total: totalPedido,
             estado: 'pendiente',
             direccionEnvio,
             telefono,
             metodoPago,
             notasAdicionales
-        }, {transaction: t});
+        }, { transaction: t });
 
         //crear detalles del pedido y actualizar stock
 
@@ -129,9 +129,9 @@ const crearPedido = async (req, res) => {
                 pedidoId: pedido.id,
                 productoId: producto.id,
                 cantidad: item.cantidad,
-                precioUnitario: item.PrecioUnitario,
+                precioUnitario: item.precioUnitario,
                 subtotal: parseFloat(item.precioUnitario) * item.cantidad
-            }, {transaction: t});
+            }, { transaction: t });
 
             detallesPedido.push(detalle),
 
@@ -142,7 +142,7 @@ const crearPedido = async (req, res) => {
 
         //vaciar carrito
         await Carrito.destroy({
-            where: {usuarioId: req.user.usuario.id},
+            where: { usuarioId: req.usuario.id },
             transaction: t
         });
 
@@ -180,7 +180,7 @@ const crearPedido = async (req, res) => {
         //revertir transaccion en caso de error
         await t.rollback();
         console.error('Error al crear pedido', error);
-        res.satus(500).json({
+        res.status(500).json({
             success: false,
             message: 'Error al crear el pedido',
             error: error.message
@@ -203,7 +203,7 @@ const getMisPedidos = async (req, res) => {
         if (estado) where.estado = estado;
 
         //paginacion
-        const offset = (parseInt(pagina) - 1) + parseInt(limite);
+        const offset = (parseInt(pagina) - 1) * parseInt(limite);
 
         //consultar pedidos
         const { count, rows: pedidos } = await Pedido.findAndCountAll({
@@ -220,6 +220,7 @@ const getMisPedidos = async (req, res) => {
                 }
             ],
             limit: parseInt(limite),
+            offset,
             order: [['createdAt', 'DESC']]
         });
 
@@ -238,7 +239,7 @@ const getMisPedidos = async (req, res) => {
         });
     } catch (error) {
         console.error('Error en getMisPedidos', error);
-        res.satus(500).json({
+        res.status(500).json({
             success: false,
             message: 'Error al obtener los pedidos',
             error: error.message
@@ -310,7 +311,7 @@ const getPedidoById = async (req, res) => {
         });
     } catch (error) {
         console.error('Error en getPedidoById', error);
-        res.satus(500).json({
+        res.status(500).json({
             success: false,
             message: 'Error encontrar pedido',
             error: error.message
@@ -389,7 +390,7 @@ const cancelarPedido = async (req, res) => {
     } catch (error) {
         await t.rollback();
         console.error('Error en cancelarPedido', error);
-        res.satus(500).json({
+        res.status(500).json({
             success: false,
             message: 'Error al cancelar pedido',
             error: error.message
@@ -452,7 +453,7 @@ const getAllPedidos = async (req, res) => {
         });
     } catch (error) {
         console.error('Error en getAllPedidos', error);
-        res.satus(500).json({
+        res.status(500).json({
             success: false,
             message: 'Error al obtener los pedidos',
             error: error.message
@@ -476,7 +477,7 @@ const actualizarEstadoPedido = async (req, res) => {
         if (!estadosValidos.includes(estado)) {
             return res.status(400).json({
                 success: false,
-                message: `Estado invalido opciones: ${estadosValidos.json(', ')}`
+                message: `Estado invalido opciones: ${estadosValidos.join(', ')}`
             });
         }
 
@@ -486,7 +487,7 @@ const actualizarEstadoPedido = async (req, res) => {
         if (!pedido) {
             return res.status(404).json({
                 success: false,
-                message: 'Producto no encontrado'   
+                message: 'Pedido no encontrado'
             });
         }
 
@@ -568,13 +569,13 @@ const getEstadisticasPedidos = async (req, res) => {
                 pedidosPorEstado: pedidosPorEstado.map(p => ({
                     estado: p.estado,
                     cantidad: parseInt(p.getDataValue('cantidad')),
-                    totalVentas: parseFloat(p.getDataValue('totaolVentas') || 0).toFixed(2)
+                    totalVentas: parseFloat(p.getDataValue('totalVentas') || 0).toFixed(2)
                 }))
             }
         });
     } catch (error) {
         console.error('Error en getEstadisticasPedido', error);
-        res.satus(500).json({
+        res.status(500).json({
             success: false,
             message: 'Error al obtener las estadisticas del pedido',
             error: error.message

@@ -124,7 +124,7 @@
         /**
          * por defecto excluir el password de todas las consultas 
          */
-        attributes: { exlude: ['password']}
+        attributes: { exclude: ['password'] }
     },
     scopes: {
         // scope para incluir el password caundo sea necesario (ejemplo en login)

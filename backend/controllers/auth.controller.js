@@ -22,7 +22,7 @@ const { generateToken } = require('../config/jwt');
 
 const register = async (req, res) => {
     try {
-        const { nombre, apellido, email, password, telefono, direccion} = req.query;
+        const { nombre, apellido, email, password, telefono, direccion} = req.body;
 
         //validacion 1 verificar q todos los campos requeridos esten presentes
         if (!nombre || !apellido || !email || !password) {
@@ -72,14 +72,12 @@ const register = async (req, res) => {
                 apellido,
                 email,
                 password,
-                rol,
                 telefono: telefono || null,
-                direccion: direccion || null, // si no se proporciona se establece como null
-                rol: 'cliente' // rol por defecto
+                direccion: direccion || null // si no se proporciona se establece como null
             });
 
             //generar Token JWT con datos del usuario
-            const token = generarToken({
+            const token = generateToken({
                 id: nuevoUsuario.id,
                 email: nuevoUsuario.email,
                 rol: nuevoUsuario.rol
@@ -123,51 +121,52 @@ const login = async (req, res) => {
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
-                messsage: 'Email y password son requeridos'
+                message: 'Email y password son requeridos'
             });
         }
 
         //validacion 2: buscar usuario por email
         //necesitamos incluir el password aqui normalmente se exckuye por seguridad
-        const usuario = await usuario.scope('withPassword').findOne({
+        const user = await Usuario.scope('withPassword').findOne({
             where: { email }
         });
 
-        if (!usuario) {
+        if (!user) {
             return res.status(401).json({
                 success: false,
-                message: 'Credenciales invalidadas'
+                message: 'Credenciales invalidas'
             });
         }
 
         //validacion 3 verificar que el usuario este activo
-        if (!usuario.activo) {
+        if (!user.activo) {
             return res.status(401).json({
                 success: false,
                 message: 'Usuario inactivo, contacte al administrador'
             });
         }
 
-            //validacion 4: verificar la contraseña
-            //usamos el metodo compararPassword del modelo usuario
-            const passwordValida = await usuario.compararPassword(password);
+        //validacion 4: verificar la contraseña
+        //usamos el metodo compararPassword del modelo usuario
+        const passwordValida = await user.compararPassword(password);
 
-            if (!passwordValida) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'credenciales invalidas'
-                });
-            }
-            // generar token jwt con datos basicos del usuario
-            const token = generateToken({
-                id: usuario.id,
-                email: usuario.email,
-                rol: usuario.rol,
+        if (!passwordValida) {
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciales invalidas'
             });
+        }
 
-            //preparar respuesta si password
-            const usuarioSinPassword = usuario.toJSON();
-            delete usuarioSinPassword.password;
+        // generar token jwt con datos basicos del usuario
+        const token = generateToken({
+            id: user.id,
+            email: user.email,
+            rol: user.rol,
+        });
+
+        //preparar respuesta si password
+        const usuarioSinPassword = user.toJSON();
+        delete usuarioSinPassword.password;
 
             //respuesta exitosa
             res.json({
@@ -292,17 +291,25 @@ const changePassword = async (req, res) => {
                 message: 'Se requiere contrasela actual y nueva contraseña'
             });
         }
-        //validacion 2 verificar que se proporcionaron ambas contraseñas
-        if (passwordActual.legth < 6 ) {
+        //validacion 2 verificar longitud minima
+        if (passwordActual.length < 6) {
             return res.status(400).json({
                 success: false,
                 message: 'La contraseña actual debe tener al menos 6 caracteres'
             });
         }
-        
-        
+
+        //buscar usuario autenticado
+        const usuario = await Usuario.findByPk(req.usuario.id);
+        if (!usuario) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+
         //validacion 4 verificar que la contraseña actual sea correcta
-        const passwordValida = await usuario.compararPassword('passwordActual');
+        const passwordValida = await usuario.compararPassword(passwordActual);
         if (!passwordValida) {
             return res.status(400).json({
                 success: false,
@@ -311,7 +318,7 @@ const changePassword = async (req, res) => {
         }
 
         //actualizar contraseña
-        usuario.password = ppasswordNueva;
+        usuario.password = passwordNueva;
         await usuario.save();
 
         // respuesta exitosa

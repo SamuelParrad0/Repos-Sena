@@ -388,7 +388,7 @@ const actualizarSubcategoria = async (req, res) => {
      */
     const eliminarSubcategoria = async (req, res) => {
         try {
-            const { id } = req.paramas;
+            const { id } = req.params;
 
             //Buscar subcategoria
             const subcategoria = await Subcategoria.findByPk(id);

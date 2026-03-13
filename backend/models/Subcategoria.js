@@ -10,7 +10,6 @@
 
  //Importar instancia de sequelize
  const { sequelize } = require('../config/database');
-const { before } = require('node:test');
 const Categoria = require('./Categoria');
 
  /**
@@ -141,17 +140,17 @@ const Categoria = require('./Categoria');
                 try {
                     //Paso 1: desactivar los productos de esta subcategoria
                     const productos = await Producto.findAll({
-                        where: {SubcategoriaId: Subcategoria.id
-                        }
+                        where: { subcategoriaId: subcategoria.id }
                     });
 
                     for (const producto of productos) {
                         await producto.update({
-                            activo: false}, {transaction: options.transaction});
-                            console.log(` Producto desactivado: ${producto.nombre}`);
+                            activo: false
+                        }, { transaction: options.transaction });
+                        console.log(` Producto desactivado: ${producto.nombre}`);
                     }
                     console.log(`Subcategoria y productos relacionados desactivados correctamente `);
-                    } catch (error) {
+                } catch (error) {
                     console.error('Error al desactivar productos relacionados', error.message);
                     throw error;
                 }

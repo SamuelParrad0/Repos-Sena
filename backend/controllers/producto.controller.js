@@ -338,23 +338,23 @@ const actualizarProducto = async (req, res) => {
                 });
             }
 
-            const catId = categoriaId || producto.categoriaId
-            if (!subcategoria.categoriaId !== parseInt(catId)) {
+            const catId = categoriaId || producto.categoriaId;
+            if (subcategoria.categoriaId !== parseInt(catId)) {
                 return res.status(404).json({
                     success: false,
-                    message: 'la subcategoria no pretenece a la categoria seleccionada'
+                    message: 'la subcategoria no pertenece a la categoria seleccionada'
                 });
             }
         }
 
-            //validar precio y stock
+        //validar precio y stock
 
-            if (precio !== undefined && parseFloat(precio) < 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'El precio debe ser mayor a 0'
-                });
-            }
+        if (precio !== undefined && parseFloat(precio) < 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'El precio debe ser mayor a 0'
+            });
+        }
 
             if (stock !== undefined && parseInt(stock) < 0) {
                 return res.status(400).json({
@@ -377,12 +377,6 @@ const actualizarProducto = async (req, res) => {
                 producto.imagen = req.file.filename;
             }
 
-            if (!nuevaCategoria.activo) {
-                return res.status(400).json({
-                    success: false,
-                    message: `La categoria "${nuevaCategoria.nombre}" esta inactiva`
-                });
-            }        
 
         // Acatualizar campos
         if (nombre !== undefined) producto.nombre = nombre;

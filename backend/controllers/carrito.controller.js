@@ -50,25 +50,25 @@ const getCarrito = async (req, res) => {
         });
 
         //respuesta exitosa
-        res.json({ 
-            succes: true,
-        data: {
-            items: itemsCarrito,
-            resumen: {
-                totalItems: itemsCarrito.length,
-                cantidadTotal: itemsCarrito.reduce ((sum, item) => sum + item.cantidad,0),
-                total: total.toFixed(2)
+        res.json({
+            success: true,
+            data: {
+                carrito: itemsCarrito,
+                resumen: {
+                    totalItems: itemsCarrito.length,
+                    cantidadTotal: itemsCarrito.reduce((sum, item) => sum + item.cantidad, 0),
+                    total: total.toFixed(2)
+                }
             }
-        }
-    });
-} catch (error) {
-    console.error('Error en getCarrito', error);
-    res.status(500).json({
-        success: false,
-        message: 'Error al obtener el carrito',
-        error:error.message,
-    })
-}
+        });
+    } catch (error) {
+        console.error('Error en getCarrito', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener el carrito',
+            error: error.message
+        });
+    }
 };
 
 /**
@@ -302,7 +302,7 @@ const eliminarItemCarrito = async (req, res) => {
         });
     } catch (error) {
         console.error('Error en elimiarItemCarrito', error);
-        res.satus(500).json({
+        res.status(500).json({
             success: false,
             message: 'Error al eliminar item del carrito',
             error: error.message

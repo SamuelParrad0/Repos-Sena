@@ -41,10 +41,10 @@ router.get('/catalogo/destacados', catalogoController.getProductosDestacados);
 
 //Rutas del carrito
 // get /api/cliente/carrito
-router.get('/cliente/carrito', carritoController.getCarrito);
+router.get('/cliente/carrito', verificarAuth, carritoController.getCarrito);
 
 // POST /api/cliente/carrito
-router.post('/cliente/carrito', carritoController.agregarAlCarrito);
+router.post('/cliente/carrito', verificarAuth, carritoController.agregarAlCarrito);
 
 // PUT /api/cliente/carrito/:id
 router.put('/cliente/carrito/:id', verificarAuth, carritoController.actualizarItemCarrito);

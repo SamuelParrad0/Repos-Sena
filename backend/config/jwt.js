@@ -28,7 +28,7 @@ const generateToken = (payload) => {
         //3. options: opciones adicionales como tiempo de expiracion
         const token = jwt.sign(
             payload, // Datos de usuario
-            procces.env.JWT_SECRET, // Clave secreta desde .env
+            process.env.JWT_SECRET, // Clave secreta desde .env
             { expiresIn: process.env.JWT_EXPIRES_IN } // Tiempo de expiracion
         );
 
@@ -53,16 +53,16 @@ const verifyToken = (token) => {
         //Parametros:
         //1. token: el token JWT a verificar
         //2. secret: la misma clave secreta usada para firmarlo
-        const decoded  = jwt.verify(token, process.env.JWT_SECRET); //la decodifica y la verifica, que la contraseña este bien
-
-        return decoded;//retorna la contraseña decodificada
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); // la decodifica y verifica
+        return decoded; // retorna los datos decodificados
     } catch (error) {
-        //Diferentes tipos de errores
-        if (error.name === 'TokenexpiredError') {
-            throw new Error('Token Expirado');
+        // Diferentes tipos de errores
+        if (error.name === 'TokenExpiredError') {
+            throw new Error('Token expirado');
         } else if (error.name === 'JsonWebTokenError') {
             throw new Error('Token invalido');
-        } throw new Error ('Error al verificar token');
+        }
+        throw new Error('Error al verificar token');
     }
 };
 

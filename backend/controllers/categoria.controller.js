@@ -24,7 +24,7 @@ const Producto = require('../models/Producto');
 
 const getCategorias = async (req, res) => {
     try {
-        const { activo, IncluirSubcategorias} = req.query;
+        const { activo, IncluirSubcategorias } = req.query;
 
         //Opciones de consulta
         const opciones = {
@@ -38,11 +38,11 @@ const getCategorias = async (req, res) => {
 
         //Incluir subcategorias si se solicita
         if (IncluirSubcategorias === 'true') {
-            opciones.include == [{
+            opciones.include = [{
                 model: Subcategoria,
                 as: 'subcategorias', // Campo del alias para la relacion
                 attributes: ['id', 'nombre', 'descripcion', 'activo'] //Campos a incluir de la subcategoria
-            }]
+            }];
         }
 
         //Opciones categorias
@@ -136,33 +136,32 @@ const getCategoriasById = async (req, res) => {
 // correción: los parámetros deben ser (req, res), no (res, res)
 const crearCategoria = async (req, res) => {
     try {
-        const {nombre, descripcion} = req.body;
+        const { nombre, descripcion, activo } = req.body;
 
-            //validacion 1- velificar campos requiridos
-            if (!nombre) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'El nombre de la categoria es requerido' 
-                });
-            }
-
-            //Validacion 2 verificar que el nombre no exista
-            const categoriaExistente = await Categoria.findOne({ where: {nombre}
+        //validacion 1- velificar campos requeridos
+        if (!nombre) {
+            return res.status(400).json({
+                success: false,
+                message: 'El nombre de la categoria es requerido'
             });
+        }
 
-            if (categoriaExistente) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Ya exixste una categoria con el nombre "${nombre}"`
-                });
-            }
+        //Validacion 2 verificar que el nombre no exista
+        const categoriaExistente = await Categoria.findOne({ where: { nombre } });
 
-            //Crear categoria
-            const nuevaCategoria = await Categoria.create({
-                nommbre,
-                descripcion: descripcion || null, // si no se proporciona la descripcion se establece como null
-                activo: true
+        if (categoriaExistente) {
+            return res.status(400).json({
+                success: false,
+                message: `Ya existe una categoria con el nombre "${nombre}"`
             });
+        }
+
+        //Crear categoria
+        const nuevaCategoria = await Categoria.create({
+            nombre,
+            descripcion: descripcion || null, // si no se proporciona la descripcion se establece como null
+            activo: activo !== undefined ? activo : true
+        });
 
             //Respuesta exitosa
             res.status(201).json({
@@ -198,8 +197,8 @@ const crearCategoria = async (req, res) => {
 
 const actualizarCategoria = async (req, res) => {
     try {
-        const {id} = req.params;
-        const {nombre, descripcion} = req.body;
+        const { id } = req.params;
+        const { nombre, descripcion, activo } = req.body;
 
         //Buscar categoria
         const categoria = await Categoria.findByPk(id);

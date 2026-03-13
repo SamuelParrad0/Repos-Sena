@@ -73,8 +73,8 @@ const  esCliente = (req, res, next) => {
  * permite verificar varios roles invalidos
  * util para cuando una ruta tiene varios roles permisos
  */
-    const tieneRol = (req, res, next) => {
-        return (req, res, next) => {
+    const tieneRol = (rolesPermitidos = []) => {
+    return (req, res, next) => {
         try {
             //verifica que existe req.usuario (viene de la autenticacion)
             if (!req.usuario) {
@@ -85,7 +85,7 @@ const  esCliente = (req, res, next) => {
             }
 
             //verificar que el usuario esta en la lista de roles permitidos
-            if (req.rolesPermitidos.include (req.usuario.rol)) {
+            if (!rolesPermitidos.includes(req.usuario.rol)) {
                 return res.status(403).json({
                     success: false,
                     message: `Acceso denegado se requiere uno de los siguientes roles: ${rolesPermitidos.join(', ')}`
@@ -95,7 +95,7 @@ const  esCliente = (req, res, next) => {
             // el usuario tiene un rol permitido continuar
             next();
 
-        }  catch  (error) {
+        } catch (error) {
             console.error('Error en middleware tieneRol', error);
             return res.status(500).json({
                 success: false,

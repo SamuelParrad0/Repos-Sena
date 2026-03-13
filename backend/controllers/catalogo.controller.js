@@ -26,106 +26,108 @@ const Subcategoria = require('../models/Subcategoria');
 
 const getProductos = async (req, res) => {
     try {
-        const { 
-            categoriaID, 
-            subcategoriaID, 
-            buscar, 
-            precioMin, 
-            precioMax, 
-            orden = 'reciente', 
-            pagina = 1, 
-            limite = 12 } = req.query;
-            const { Op } = require('sequelize');
+        const {
+            categoriaId,
+            subcategoriaId,
+            buscar,
+            precioMin,
+            precioMax,
+            orden = 'reciente',
+            pagina = 1,
+            limite = 12
+        } = req.query;
 
+        const { Op } = require('sequelize');
 
-        // filtros base solo para productoss activos y con stock
-            const where = {
-                activo: true,
-                stock: { [Op.gt]: 0 }
-            };
-            //filtros opcionales
-        if (categoriaId)    where.categoriaId = categoriaId;
-        if (subcategoriaId)  where.subcategoriaId = subcategoriaId;
+        // filtros base: solo productos activos y con stock
+        const where = {
+            activo: true,
+            stock: { [Op.gt]: 0 }
+        };
 
-        //busqueda de texto 
+        // filtros opcionales
+        if (categoriaId) where.categoriaId = categoriaId;
+        if (subcategoriaId) where.subcategoriaId = subcategoriaId;
+
+        // búsqueda de texto
         if (buscar) {
             where[Op.or] = [
-                { nombre: { [Op.like]: `%${buscar}%`} },
-                { descripcion: { [Op.like]: `%${buscar}%`} }, // permite buscar por nombre o descripcion
+                { nombre: { [Op.like]: `%${buscar}%` } },
+                { descripcion: { [Op.like]: `%${buscar}%` } }
             ];
         }
 
-        //filtro por rango de precio
-        if (precioMin && precioMax) {
+        // rango de precios
+        if (precioMin || precioMax) {
             where.precio = {};
             if (precioMin) where.precio[Op.gte] = parseFloat(precioMin);
-            if (precioMax) where.precio[Op.gte] = parseFloat(precioMax);
+            if (precioMax) where.precio[Op.lte] = parseFloat(precioMax);
         }
 
-        //Ordenamiento
-        let order;
-        switch (order) {
+        // ordenamiento
+        let orderOption = [['createdAt', 'DESC']];
+        switch (orden) {
             case 'precio_asc':
-                order = [['precio', 'ASC']];
+                orderOption = [['precio', 'ASC']];
                 break;
             case 'precio_desc':
-                order = [['precio', 'DESC']];
+                orderOption = [['precio', 'DESC']];
                 break;
             case 'nombre':
-                order = [['nombre', 'ASC']];
+                orderOption = [['nombre', 'ASC']];
                 break;
             case 'reciente':
-                order = [['createdAt', 'DESC']];
+            default:
+                orderOption = [['createdAt', 'DESC']];
                 break;
         }
 
-        //paginacion
+        // paginación
         const offset = (parseInt(pagina) - 1) * parseInt(limite);
-        
 
-        //consultar productos
-         
-        const opciones = { count, rows: productos } = await Producto.findAnndCountAll({
+        // consultar productos
+        const { count, rows: productos } = await Producto.findAndCountAll({
             where,
             include: [
                 {
-                    model: categoria,
+                    model: Categoria,
                     as: 'categoria',
                     attributes: ['id', 'nombre'],
-                    where: { activo: true}  
+                    where: { activo: true }
                 },
                 {
-                    model: subcategoria,
+                    model: Subcategoria,
                     as: 'subcategoria',
-                    attributes: ['id', 'nombre',],
-                    where: { activo: true}  
-                },
+                    attributes: ['id', 'nombre'],
+                    where: { activo: true }
+                }
             ],
-            limit : parseInt(limite),
+            limit: parseInt(limite),
             offset,
-            order: [['nombre', 'ASC']]
+            order: orderOption
         });
 
-        //respuesta exitosa
+        // respuesta exitosa
         res.json({
             success: true,
-            data: {productos,
+            data: {
+                productos,
                 paginacion: {
                     total: count,
                     pagina: parseInt(pagina),
                     limite: parseInt(limite),
                     paginasTotales: Math.ceil(count / parseInt(limite))
-                },
+                }
             }
         });
 
     } catch (error) {
-        console.error('Error en getProductos:', error); 
+        console.error('Error en getProductos:', error);
         res.status(500).json({
             success: false,
             message: 'Error al obtener productos',
             error: error.message
-        });         
+        });
     }
 };
 
@@ -137,44 +139,45 @@ const getProductos = async (req, res) => {
  * @param {object} res - response express
  */
 
-
 const getproductoById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Buscar productos con activo y stock
-        const Producto = await producto.findOne({
+        // Buscar producto activo
+        const producto = await Producto.findOne({
             where: {
-                id, 
-                activo: true,
+                id,
+                activo: true
             },
-            include: [{ 
-                model: Categoria, 
-                as: 'categoria',
-                attributes: ['id', 'nombre', 'activo'],
-                where: { activo: true}
-        },
-        {
-            model: Subcategoria,
-            as: 'subcategoria',
-            attributes:['id','nombre','activo'],
-            where: { activo: true }
-        }
-            ] 
-     });
+            include: [
+                {
+                    model: Categoria,
+                    as: 'categoria',
+                    attributes: ['id', 'nombre', 'activo'],
+                    where: { activo: true }
+                },
+                {
+                    model: Subcategoria,
+                    as: 'subcategoria',
+                    attributes: ['id', 'nombre', 'activo'],
+                    where: { activo: true }
+                }
+            ]
+        });
 
-        if (!Producto) {
+        if (!producto) {
             return res.status(404).json({
                 success: false,
                 message: 'Producto no encontrado o no disponible'
             });
         }
+
         // Respuesta exitosa
         res.json({
             success: true,
-            data: { 
-                producto: productoJSON
-             }
+            data: {
+                producto
+            }
         });
 
     } catch (error) {
@@ -254,7 +257,7 @@ const getSubcategoriasPorCategoria = async (req, res) => {
         const { Op } = require('sequelize');
 
         // Verificar que la categoria exista y este activa
-        const categorias = await Categoria.findOne({
+        const categoria = await Categoria.findOne({
             where: {id, activo: true},
         });
         if (!categoria) {
