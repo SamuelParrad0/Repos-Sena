@@ -239,7 +239,7 @@ const actualizarItemCarrito = async (req, res) => {
             });
         }
         //validar stock disponible
-        if (cantidadNum < item.producto.stock) {
+        if (cantidadNum > item.producto.stock) {
             return res.status(400).json({
                 success: false,
                 message: `Stock insuficiente Disponible: ${item.producto.stock}`
@@ -278,7 +278,7 @@ const eliminarItemCarrito = async (req, res) => {
         const { id } = req.params;
 
         //Buscar item 
-        const item = await Carrito.findOnde({
+        const item = await Carrito.findOne({
             where: {
                 id,
                 usuarioId: req.usuario.id
@@ -329,7 +329,7 @@ const vaciarCarrito = async (req, res) => {
             success: true,
             message: 'Carrito vaciado',
             data : {
-                itemsEliminados
+                itemsEliminados: numEliminados
             }
         });
     } catch (error) {

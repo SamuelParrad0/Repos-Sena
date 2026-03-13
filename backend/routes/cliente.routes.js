@@ -47,13 +47,13 @@ router.get('/cliente/carrito', carritoController.getCarrito);
 router.post('/cliente/carrito', carritoController.agregarAlCarrito);
 
 // PUT /api/cliente/carrito/:id
-router.put('/cliente/carrito/:id', verificarAuth, carritoController.actualiItemcarrito);
+router.put('/cliente/carrito/:id', verificarAuth, carritoController.actualizarItemCarrito);
 
 // delete /api/cliente/carrito/:id
 router.delete('/cliente/carrito/:id', verificarAuth, carritoController.eliminarItemCarrito);
 
-// delete /api/cliente/carrito/:id
-//vaciar carrito
+// DELETE /api/cliente/carrito/:id
+// vaciar carrito
 router.delete('/cliente/carrito/:id', verificarAuth, carritoController.vaciarCarrito);
 
 
