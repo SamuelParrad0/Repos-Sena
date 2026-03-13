@@ -1,124 +1,129 @@
 /**
  * SERVIDOR PRINCIPAL DEL BACKEND
- * este archivo principal del backend
- * condiguracion express.middleware, rutas y conexionde la base de datos
+ * este el archivo principal del servidor del backend
+ * configura express. middlewares, rutas y conexion de base de datos
  */
 
-// IMPORTACIONES 
+// IMPORTACIONES
 
-// Importar express para crear servidor 
-const express = require ( 'express');
+// Importar express para crear el servidor
+const express = require('express');
 
-// Importar cors para permitir solisitudes desde el fronend
-const cors = require ( 'cors');
+//importar cors para permitir solicitudes desde el frontend+
+const cors = require('cors');
 
-// Importar path para manejar rutas de archivos
-const path = require ( 'path');
+// importar path para manejar rutas de archivos
+const path = require('path');
 
-// importar dotenv para manejar variables del entorno 
-require ('dotenv').config();
+// Importar dotenv para manejar variables de entorno
+require('dotenv').config();
 
-// Importar configuracion de la base de datos 
-const dbConfig = require ('./config/database');
+//importar configuarcion de la base de datos
+const { testConnection, syncDatabase } = require('./config/database');
 
-// Importar modelos y asociaciones 
-const {initAssociations} = require ('./models');
+// importar modelos y asociaciones
+const { initAssociations } = require('./models');
 
-// Importar seeders 
-const {runSeeders} = require ('./seeders/adminSeeder');
-const { version } = require('os');
-const { timeStamp } = require('console');
+// importar seeders 
+let runSeeders = async () => {};
 
-// crear aplicaciones express 
+try {
+    ({ runSeeders } = require('./seeders/adminSeeder'));
+} catch (error) {
+    console.warn('Seeder de administrador no encontrado, se omite la carga inicial.');
+}
 
-const app = express ();
 
-// Obtener el puerto desde las variables de entorno 
+//Crear aplicaciones express
+
+const app = express();
+
+//Obtener el puerto desde la variable de entorno 
 const PORT = process.env.PORT || 5000;
 
-//MIDDLEWARES GLOBALES
+// MIDDLEWARES GLOBALES
 
-// cors permiten peticiones desde el fronend
-//configurar que los dominios pueden hacer peticiones al backend
+//cors permiter peticiones desde el frontend
+//configura que los dominios pueden hacer peticiones al backend 
 
-app.use (cors ({
-    origin:process.env.FRONDEND_URL || 'http://localhost:3000', ///url del frontend
-    credentials: true, // permitir enviar cookies 
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], //metodos permitidos
-    allowedHeaders:['Content-Type', 'Authorization'], // encabezados permitidos
-}));
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000', // url del frontend
+    credentials: true,//permite envio de cookies
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // métodos permitidos
+    allowedHeaders: ['Content-Type', 'Authorization']// Headers permitidos
+})); 
 
 /**
- * express.json() - parse el body de las peticiones en fomaro JSON
+ * express.json() parsear el body de las peticiones en formato JSON
  */
 
 app.use(express.json());
 
 /**
- * express.urlencoded() - parse el body de los formularios
- * las imagenes estaran disponibles
+ * express.urlencoded() pasar el body de los formularios
+ * las imagenes  estaran disponibles  
  */
 
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 
 /**
- * servir archivos estaticos iamgenes desdde la capeta raiz
+ * servir archivos estaticos iamagenes desde la carpera raiz 
  */
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-//middleware para logging de peticiones
-//muestra en consola cada peticion que llega el servidor
+// middleware para logging de peticiones
+// Muestra en consola cada peticion que llega el servidor 
 
 if (process.env.NODE_ENV === 'development') {
     app.use((req, res, next) => {
-        console.log(`ok${req.method} ${req.path}`);
+        console.log(`ok ${req.method} ${req.path}`);
         next();
     });
 }
 
-//rutas
+// rutas 
 
-//rutas raiz verificar el servidor esta corriendo
+// rutas raiz verificar que el servidor esta corriendo
 
-app.get ('/', (req, res) => {
+app.get('/', (req, res) => {
     res.json({
         success: true,
-        message: 'Servidor E-commerce backend corriendo correctamente',
-        version : '1.0.0',
-        timeStamp: new Date().toISOString(),
+        message: 'Servidor E-commerce Backend corriendo correctamente',
+        version: '1.0.0',
+        timeStamp: new Date().toISOString()
     });
 });
 
-//ruta de salud para verificar el servidor como esta
-app.get ('api/health', (req, res) => {
+// ruta de salud verifica que el servidor como esta 
+app.get('/api/health', (req, res) => {
     res.json({
         success: true,
         status: 'healthy',
         database: 'connected',
-        timeStamp: new Date().toISOString(),
+        timeStamp: new Date().toISOString()
     });
 });
 
-//rutas api
+//rutas api 
 
-//rutas de autentiacion
-//incluye registro login, perfil
+// rutas de autenticacion
+// incluye registro login, perfil
 
-const authRoutes = require ('./routes/auth.routes');
+const authRoutes = require('./routes/auth.routes');
 app.use('/api/auth', authRoutes);
 
-//rutas del administrador
-//requieren autenticacion y rol del administrador
+//Rutas del administrador
+//requieren autenticacion y rol de adminsitrador
 
 const adminRoutes = require('./routes/admin.routes');
 app.use('/api/admin', adminRoutes);
 
-//rutas del cliente
-// el archivo real se llama cliente.routes.js, no "acliente"
+//Rutas del cliente
+
 const clienteRoutes = require('./routes/cliente.routes');
 app.use('/api', clienteRoutes);
 
-// manejo de rutas no encontradas (404)
+// Manejo de rutas no encontradas (404)
 
 app.use((req, res) => {
     res.status(404).json({
@@ -128,102 +133,98 @@ app.use((req, res) => {
     });
 });
 
-//Manejo de errores globales
+// Manejo de errores globales
+
 app.use((err, req, res, next) => {
     console.error('Error:', err.message);
-    // Manejo de errores globales
+    //Error de multer subida de archivos
+    if (err.name === 'MulterError') {
+        return res.status(400).json({
+            success: false,
+            message: 'Error al subir el archivo',
+            error: err.message,
+        });
+    }
 
-    app.use((err, req, res, next) => {
-        console.error('Error:', err.message);
-        // Error de multer subida de archivos
-        if(err.name === 'MulterError') {
-            return res.status(400).json({
-                success: false,
-                message: 'Error al subir el archivo',
-                error: err.message
-            });
-        }
-    });
-
-    // Otros errores
+    // otros errores 
     res.status(500).json({
         success: false,
-        message: err.message || 'Error interno del servidor',
+        message: err.message || 'error interno del servidor',
         ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     });
 });
 
-//inicializar servidor y base de datos
+// inicializar servidor y base de datos 
 
 /**
- * funcion principal para inciar el servicor
+ * funcion principal para iniciar el servidor
  * prueba la conexion a MySQL
- * sincroniza los modelos (crea las tablas)
+ * sincriniza los modelos (crea las tablas)
  * inicia el servidor express
  */
 
 const startServer = async () => {
     try {
-        //paso 1 probar conexion de mysql
-        console.log('conectado a mysql...');
-        const dbConnected = await dbConfig.testConnection();
+        //paso 1 probar conexion a MySQL
+        console.log(' Conectado a MySQL...');
+        const dbConnected = await testConnection();
 
         if (!dbConnected) {
             console.error(' No se pudo conectar a Mysql verificar XAMPP y el archivo .env');
-            process.exit(1); //salir si no hay conexion
+            process.exit(1);//salir si no hay conexion
         }
 
         //paso 2 sincronizar modelos (crear tablas)
-        console.log('sincronizando modelos con la base de datos...');
+        console.log('Sincronizando modelos con la base de datos...');
 
-        //Inicializar asociaciones entre los modelos
+        //Inicializar asociaciones entre los modelos 
         initAssociations();
-        //en desarrollo alter puede ser true para actualizar la estructura 
-        //en produccion debe ser false para no perder los datos
+
+        // en desarrollo alter puede ser true para actulizar la estructura
+        //en produccion debe ser false para no perder os datos
         const alterTables = process.env.NODE_ENV === 'development';
         const dbSynced = await syncDatabase(false, alterTables);
 
         if (!dbSynced) {
-            console.error('X Error al sincronizar la base de datos');
+            console.error('X Error al sincronizar la base den datos ');
             process.exit(1);
         }
 
-        //paso 3 ejecutar seeders datos iniciales
+        // Paso 3 ejecutar seeders datos iniciales 
         await runSeeders();
 
         //paso 4 iniciar servidor express
         app.listen(PORT, () => {
-            console.log('\n __________');
-            console.log(`Servidor corriendo en el puerto ${PORT}`);
+            console.log('\n ____________________');
+            console.log(`Servidor correindo en el puerto ${PORT}`);
             console.log(`URL: http://localhost:${PORT}`);
-            console.log(`Base de datos${process.env.DB_NAME}`);
+            console.log(`base de datos ${process.env.DB_NAME}`);
             console.log(`Modo: ${process.env.NODE_ENV}`);
             console.log('Servidor listo para realizar peticiones');
         });
     } catch (error) {
-        console.error('X Error fatal al inicar el servidor: ', error.message);
-        process.exit(1)
+        console.error('X Error fatal al iniciar el servidor:', error.message);
+        process.exit(1);
     }
 };
 
-//manejo de cierre
-//captura el ctrl+c para cerrar el servidor correctamente
+// namejo de cierre 
+// captura el ctrl+c para cerrar el servidor correctamente
 
 process.on('SIGINT', () => {
     console.log('\n\n cerrando servidor...');
     process.exit(0);
 });
 
-//capturar errores no menjados
+// capturar errores no menjados 
 
 process.on('unhandledRejection', (err) => {
     console.error('X error no manejado', err);
     process.exit(1);
 });
 
-//inicar servidor
+// Iniciar servidor 
 startServer();
 
-//exportar app para tsting
+// exportar app para testing 
 module.exports = app;
-
