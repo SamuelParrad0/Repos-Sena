@@ -130,7 +130,7 @@
     indexes: [
         {
             //  Indice para buscar carrito por usuario
-            fields: ['usuariosId']
+            fields: ['usuarioId']
         },
         {
             //  Indice para buscar pedidos por estado

@@ -102,7 +102,7 @@
     indexes: [
         {
             //  Indice para buscar carrito por usuario
-            fields: ['usuariosId']
+            fields: ['usuarioId']
         },
         {
 
